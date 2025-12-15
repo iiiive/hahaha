@@ -1,0 +1,434 @@
+<main class="max-w-6xl mx-auto px-4 md:px-6 lg:px-8" [ngClass]="isAdmin ? 'py-6' : 'py-8'">
+    <div id="scheduling" class="section">
+        <h2 class="text-3xl font-bold text-gray-800 mb-6" [ngClass]="isAdmin ? '' : 'text-center'">
+            Sacrament Scheduling
+        </h2>
+
+        <!-- ADMIN: 3 columns (Requests | Form | Upcoming)  -->
+        <!-- USER: single card with form only -->
+        <div class="w-full mx-auto" [ngClass]="
+        isAdmin
+          ? 'grid grid-cols-1 lg:grid-cols-3 gap-6'
+          : 'bg-white rounded-lg card-shadow p-6 md:p-8 max-w-xl md:max-w-2xl lg:max-w-3xl'
+      ">
+            <!-- ===================== SCHEDULE REQUESTS (ADMIN LEFT) ===================== -->
+            <div *ngIf="isAdmin" class="bg-white rounded-lg card-shadow p-6">
+                <h3 class="text-xl font-semibold text-gray-800 mb-3">Schedule Requests</h3>
+
+                <!-- Service type filter buttons -->
+                <div class="flex flex-wrap gap-2 mb-4">
+                    <button type="button" *ngFor="let f of serviceTypeFilters" (click)="setServiceFilter(f.key)"
+                        class="px-3 py-1 rounded-full text-xs font-medium border" [ngClass]="
+              selectedServiceFilter === f.key
+                ? 'bg-purple-600 text-white border-purple-600'
+                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+            ">
+                        {{ f.label }}
+                    </button>
+                </div>
+
+                <div *ngIf="filteredPendingSchedules.length > 0; else noRequests" class="space-y-3">
+                    <div *ngFor="let req of filteredPendingSchedules" class="p-4 rounded-r-lg"
+                        [ngClass]="req.colorClass">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h4 class="font-semibold text-gray-800">
+                                    {{ getAppointmentTitle(req) }}
+                                </h4>
+                                <p class="text-sm text-gray-600">
+                                    {{ req.fullDateTime | date: 'MMMM d, y (EEEE) h:mm a' }}
+                                </p>
+                                <p class="text-sm text-gray-500">Contact: {{ req.clientPhone }}</p>
+                            </div>
+
+                            <div class="flex flex-col items-end gap-2">
+                                <!-- service type badge (per type colors) -->
+                                <span class="text-xs font-medium px-2.5 py-0.5 rounded" [ngClass]="req.badgeClass">
+                                    {{ req.serviceType | titlecase }}
+                                </span>
+
+                                <div class="flex gap-2">
+                                    <button type="button" (click)="approveRequest(req)"
+                                        class="text-xs px-3 py-1 rounded bg-green-600 text-white hover:bg-green-700">
+                                        Approve
+                                    </button>
+                                    <button type="button" (click)="deleteAppointment(req.id)"
+                                        class="text-xs px-3 py-1 rounded bg-red-100 text-red-700 hover:bg-red-200">
+                                        Decline
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <ng-template #noRequests>
+                    <p class="text-gray-500 text-sm">No pending schedule requests.</p>
+                </ng-template>
+            </div>
+
+            <!-- ===================== BOOKING FORM (CENTER) ===================== -->
+            <div [ngClass]="isAdmin ? 'bg-white rounded-lg card-shadow p-6' : ''">
+                <h3 class="text-xl font-semibold text-gray-800 mb-5" [ngClass]="isAdmin ? '' : 'text-center'">
+                    Schedule New Service
+                </h3>
+
+                <form [formGroup]="schedulingForm" (ngSubmit)="startReview()" class="space-y-3">
+                    <!-- Service Type -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1.5">Service Type</label>
+                        <select formControlName="serviceType"
+                            class="w-full px-4 py-2.5 border border-gray-300 rounded-md">
+                            <option value="">Select a service</option>
+                            <option value="wedding">Wedding</option>
+                            <option value="baptism">Baptism</option>
+                            <option value="blessing">House Blessing</option>
+                            <option value="funeral">Funeral Service</option>
+                        </select>
+                        <div *ngIf="
+                schedulingForm.get('serviceType')?.invalid &&
+                schedulingForm.get('serviceType')?.touched
+              " class="text-red-500 text-sm">
+                            Please select a service type
+                        </div>
+                    </div>
+
+                    <!-- Wedding Extra Fields -->
+                    <div *ngIf="schedulingForm.get('serviceType')?.value === 'wedding'" class="space-y-3 border-t pt-4">
+                        <h4 class="text-lg font-semibold text-gray-700">Wedding Requirements</h4>
+
+                        <!-- Partner 1 -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1.5">Partner 1 Full Name</label>
+                            <input type="text" formControlName="partner1FullName"
+                                class="w-full px-4 py-2.5 border border-gray-300 rounded-md" />
+                            <div *ngIf="
+                  schedulingForm.get('partner1FullName')?.invalid &&
+                  schedulingForm.get('partner1FullName')?.touched
+                " class="text-red-500 text-sm">
+                                Required
+                            </div>
+                        </div>
+
+                        <!-- Partner 2 -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1.5">Partner 2 Full Name</label>
+                            <input type="text" formControlName="partner2FullName"
+                                class="w-full px-4 py-2.5 border border-gray-300 rounded-md" />
+                            <div *ngIf="
+                  schedulingForm.get('partner2FullName')?.invalid &&
+                  schedulingForm.get('partner2FullName')?.touched
+                " class="text-red-500 text-sm">
+                                Required
+                            </div>
+                        </div>
+
+                        <!-- Uploads -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1.5">Couple Picture</label>
+                            <input type="file" (change)="onFileChange($event, 'couple_picture')" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1.5">Valid IDs (Both)</label>
+                            <input type="file" multiple (change)="onFileChange($event, 'valid_id')" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1.5">
+                                Baptism / Confirmation Certificates
+                            </label>
+                            <input type="file" multiple (change)="onFileChange($event, 'certificate')" />
+                        </div>
+
+                        <h4 class="font-semibold text-gray-700 mb-2">Uploaded Requirements</h4>
+
+                        <ul *ngIf="requirements?.length; else noReqs" class="list-disc ml-6">
+                            <li *ngFor="let req of requirements">
+                                {{ req.requirementType }} -
+                                <a [href]="environment.imageUrl + req.filePath" target="_blank"
+                                    class="text-blue-600 underline">
+                                    View File
+                                </a>
+                            </li>
+                        </ul>
+
+                        <ng-template #noReqs>
+                            <p class="text-gray-500">No requirements uploaded yet.</p>
+                        </ng-template>
+                    </div>
+
+                    <!-- Client Info -->
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1.5">First Name</label>
+                            <input type="text" formControlName="clientFirstName"
+                                class="w-full px-4 py-2.5 border border-gray-300 rounded-md" />
+                            <div *ngIf="
+                  schedulingForm.get('clientFirstName')?.invalid &&
+                  schedulingForm.get('clientFirstName')?.touched
+                " class="text-red-500 text-sm">
+                                Required
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1.5">Last Name</label>
+                            <input type="text" formControlName="clientLastName"
+                                class="w-full px-4 py-2.5 border border-gray-300 rounded-md" />
+                            <div *ngIf="
+                  schedulingForm.get('clientLastName')?.invalid &&
+                  schedulingForm.get('clientLastName')?.touched
+                " class="text-red-500 text-sm">
+                                Required
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1.5">Contact Phone</label>
+                        <input type="tel" formControlName="clientPhone"
+                            class="w-full px-4 py-2.5 border border-gray-300 rounded-md" />
+                        <div *ngIf="
+                schedulingForm.get('clientPhone')?.errors?.['required'] &&
+                schedulingForm.get('clientPhone')?.touched
+              " class="text-red-500 text-sm">
+                            Phone is required
+                        </div>
+                        <div *ngIf="
+                schedulingForm.get('clientPhone')?.errors?.['pattern'] &&
+                schedulingForm.get('clientPhone')?.touched
+              " class="text-red-500 text-sm">
+                            Enter a valid phone number
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1.5">Email Address</label>
+                        <input type="email" formControlName="clientEmail"
+                            class="w-full px-4 py-2.5 border border-gray-300 rounded-md" />
+                        <div *ngIf="
+                schedulingForm.get('clientEmail')?.errors?.['required'] &&
+                schedulingForm.get('clientEmail')?.touched
+              " class="text-red-500 text-sm">
+                            Email is required
+                        </div>
+                        <div *ngIf="
+                schedulingForm.get('clientEmail')?.errors?.['email'] &&
+                schedulingForm.get('clientEmail')?.touched
+              " class="text-red-500 text-sm">
+                            Enter a valid email
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1.5">Preferred Date</label>
+                            <input type="date" formControlName="serviceDate"
+                                class="w-full px-4 py-2.5 border border-gray-300 rounded-md" />
+                            <div *ngIf="
+                  schedulingForm.get('serviceDate')?.invalid &&
+                  schedulingForm.get('serviceDate')?.touched
+                " class="text-red-500 text-sm">
+                                Required
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1.5">Preferred Time</label>
+                            <select formControlName="serviceTime"
+                                class="w-full px-4 py-2.5 border border-gray-300 rounded-md">
+                                <option value="">Select time</option>
+                                <option value="09:00">9:00 AM</option>
+                                <option value="10:00">10:00 AM</option>
+                                <option value="11:00">11:00 AM</option>
+                                <option value="14:00">2:00 PM</option>
+                                <option value="15:00">3:00 PM</option>
+                                <option value="16:00">4:00 PM</option>
+                            </select>
+                            <div *ngIf="
+                  schedulingForm.get('serviceTime')?.invalid &&
+                  schedulingForm.get('serviceTime')?.touched
+                " class="text-red-500 text-sm">
+                                Required
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Address for House Blessing / Funeral -->
+                    <div *ngIf="['blessing', 'funeral'].includes(schedulingForm.get('serviceType')?.value)"
+                        class="space-y-3 border-t pt-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1.5">Address</label>
+                            <textarea rows="3" formControlName="serviceAddress"
+                                class="w-full px-4 py-2.5 border border-gray-300 rounded-md"
+                                placeholder="Enter complete address..."></textarea>
+                            <div *ngIf="
+                  schedulingForm.get('serviceAddress')?.invalid &&
+                  schedulingForm.get('serviceAddress')?.touched
+                " class="text-red-500 text-sm">
+                                Service Address is required
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1.5">Special Requests</label>
+                        <textarea rows="3" formControlName="specialRequests"
+                            class="w-full px-4 py-2.5 border border-gray-300 rounded-md"
+                            placeholder="Any special requirements or notes..."></textarea>
+                    </div>
+
+                    <div class="flex gap-2">
+                        <button type="submit"
+                            class="flex-1 bg-purple-600 text-white py-2.5 px-4 rounded-md hover:bg-purple-700 transition">
+                            {{ isEditing ? 'Review & Update Service' : 'Review & Schedule Service' }}
+                        </button>
+                        <button type="button" (click)="resetForm()"
+                            class="flex-1 bg-gray-200 text-gray-800 py-2.5 rounded-lg hover:bg-gray-300">
+                            Clear
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- ===================== UPCOMING APPOINTMENTS (ADMIN RIGHT) ===================== -->
+            <div *ngIf="isAdmin" class="bg-white rounded-lg card-shadow p-6">
+                <h3 class="text-xl font-semibold text-gray-800 mb-5">Upcoming Appointments</h3>
+
+                <div *ngIf="schedules.length > 0; else noAppointments" class="space-y-3">
+                    <div *ngFor="let appt of schedules" class="p-4 rounded-r-lg" [ngClass]="appt.colorClass">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h4 class="font-semibold text-gray-800">
+                                    {{ getAppointmentTitle(appt) }}
+                                </h4>
+                                <p class="text-sm text-gray-600">
+                                    {{ appt.fullDateTime | date: 'MMMM d, y (EEEE) h:mm a' }}
+                                </p>
+                                <p class="text-sm text-gray-500">Contact: {{ appt.clientPhone }}</p>
+                            </div>
+
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs font-medium px-2.5 py-0.5 rounded" [ngClass]="appt.badgeClass">
+                                    {{ appt.serviceType | titlecase }}
+                                </span>
+
+                                <!-- Edit button -->
+                                <button (click)="editSchedule(appt)" class="text-blue-600 hover:text-blue-800 text-sm">
+                                    ✎
+                                </button>
+
+                                <!-- Delete button -->
+                                <button (click)="deleteAppointment(appt.id)"
+                                    class="text-red-600 hover:text-red-800 text-sm">
+                                    ✖
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <ng-template #noAppointments>
+                    <p class="text-gray-500 text-sm">No upcoming appointments scheduled.</p>
+                </ng-template>
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- ===================== REVIEW MODAL ===================== -->
+<div *ngIf="showReviewModal && reviewData" class="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-xl rounded-xl shadow-xl">
+        <div class="px-5 py-4 border-b flex justify-between items-center">
+            <h3 class="text-lg font-bold">Review Service Request</h3>
+            <button (click)="backToEdit()" class="text-gray-500 hover:text-gray-700 text-xl leading-none">
+                ×
+            </button>
+        </div>
+
+        <div class="p-5 space-y-4">
+            <p class="text-sm text-gray-600">
+                Please review the details of your request before submitting. This will be
+                sent to the parish administrator for confirmation.
+            </p>
+
+            <div class="bg-gray-50 border rounded-lg p-4 space-y-3">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <span class="text-xs font-semibold text-gray-500 uppercase">Service Type</span>
+                        <p class="text-sm text-gray-800">
+                            {{ reviewData.serviceType | titlecase }}
+                        </p>
+                    </div>
+                    <div>
+                        <span class="text-xs font-semibold text-gray-500 uppercase">Preferred Date & Time</span>
+                        <p class="text-sm text-gray-800">
+                            {{ reviewData.serviceDate }} • {{ reviewData.serviceTime }}
+                        </p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <span class="text-xs font-semibold text-gray-500 uppercase">Client Name</span>
+                        <p class="text-sm text-gray-800">
+                            {{ reviewData.clientFirstName }} {{ reviewData.clientLastName }}
+                        </p>
+                    </div>
+                    <div>
+                        <span class="text-xs font-semibold text-gray-500 uppercase">Contact</span>
+                        <p class="text-sm text-gray-800">
+                            {{ reviewData.clientPhone }}<br />
+                            <span class="text-gray-600">{{ reviewData.clientEmail }}</span>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Wedding details -->
+                <div *ngIf="reviewData.serviceType === 'wedding'" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <span class="text-xs font-semibold text-gray-500 uppercase">Partner 1</span>
+                        <p class="text-sm text-gray-800">
+                            {{ reviewData.partner1FullName || '—' }}
+                        </p>
+                    </div>
+                    <div>
+                        <span class="text-xs font-semibold text-gray-500 uppercase">Partner 2</span>
+                        <p class="text-sm text-gray-800">
+                            {{ reviewData.partner2FullName || '—' }}
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Address (blessing / funeral) -->
+                <div *ngIf="reviewData.serviceAddress">
+                    <span class="text-xs font-semibold text-gray-500 uppercase">Service Address</span>
+                    <p class="text-sm text-gray-800 whitespace-pre-wrap">
+                        {{ reviewData.serviceAddress }}
+                    </p>
+                </div>
+
+                <div *ngIf="reviewData.specialRequests">
+                    <span class="text-xs font-semibold text-gray-500 uppercase">Special Requests</span>
+                    <p class="text-sm text-gray-800 whitespace-pre-wrap">
+                        {{ reviewData.specialRequests }}
+                    </p>
+                </div>
+            </div>
+
+            <p class="text-xs text-gray-500">
+                If everything looks correct, click
+                <span class="font-semibold">Confirm &amp; Submit</span>. Otherwise, go back and
+                edit your information.
+            </p>
+
+            <div class="flex gap-3 pt-2">
+                <button type="button" (click)="backToEdit()"
+                    class="flex-1 bg-gray-100 text-gray-800 py-2 rounded-md hover:bg-gray-200">
+                    Back to Edit
+                </button>
+                <button type="button" (click)="confirmAndSubmit()"
+                    class="flex-1 bg-purple-600 text-white py-2 rounded-md hover:bg-purple-700">
+                    Confirm &amp; Submit
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
