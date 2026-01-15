@@ -1,0 +1,208 @@
+<!-- src/app/modules/donations/donations.component.html -->
+<main class="donations-page">
+    <section class="container">
+        <h2 class="page-title">Weekly Sponsor Tracking</h2>
+
+        <div *ngIf="!isAdmin" class="warning">
+            You do not have permission to view this page.
+        </div>
+
+        <ng-container *ngIf="isAdmin">
+            <!-- Filters Card -->
+            <div class="filters-card">
+                <div class="filters-header">
+                    <div>
+                        <div class="filters-title">Select Month, Year & Donation Type</div>
+                        <div class="filters-subtitle"></div>
+                    </div>
+
+                    <button class="btn-primary" type="button" (click)="openAddCashDonation()">
+                        + Add Cash Donation
+                    </button>
+                </div>
+
+                <div class="filters-grid">
+                    <div class="field">
+                        <label>Month</label>
+                        <select [(ngModel)]="selectedMonthIndex" (change)="onMonthYearChange()">
+                            <option *ngFor="let m of months; let i = index" [value]="i">{{ m }}</option>
+                        </select>
+                    </div>
+
+                    <div class="field">
+                        <label>Year</label>
+                        <select [(ngModel)]="selectedYear" (change)="onMonthYearChange()">
+                            <option *ngFor="let y of [2024,2025,2026,2027,2028]" [value]="y">{{ y }}</option>
+                        </select>
+                    </div>
+
+                    <div class="field">
+                        <label>Filter by Donation Type</label>
+                        <select [(ngModel)]="donationTypeFilter" (change)="setDonationTypeFilter(donationTypeFilter)">
+                            <option>All Donations</option>
+                            <option>Offering</option>
+                            <option>Kapaldanan</option>
+                            <option>KAPASALAMATAN</option>
+                            <option>Other</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Week Cards -->
+                <div class="weeks-row">
+                    <button class="week-card" [class.active]="selectedWeek === 1" (click)="setWeek(1)">
+                        <div class="wk-title">Week 1</div>
+                        <div class="wk-range">Jan 1–7</div>
+                    </button>
+
+                    <button class="week-card" [class.active]="selectedWeek === 2" (click)="setWeek(2)">
+                        <div class="wk-title">Week 2</div>
+                        <div class="wk-range">Jan 8–14</div>
+                    </button>
+
+                    <button class="week-card" [class.active]="selectedWeek === 3" (click)="setWeek(3)">
+                        <div class="wk-title">Week 3</div>
+                        <div class="wk-range">Jan 15–21</div>
+                    </button>
+
+                    <button class="week-card" [class.active]="selectedWeek === 4" (click)="setWeek(4)">
+                        <div class="wk-title">Week 4</div>
+                        <div class="wk-range">Jan 22–31</div>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Table -->
+            <div class="table-card">
+                <div class="table-head">
+                    <div class="th small">#</div>
+                    <div class="th">Donor Name</div>
+                    <div class="th right">Amount</div>
+                </div>
+
+                <div *ngIf="filtered.length === 0" class="empty-row">
+                    No donations found for selected filters.
+                </div>
+
+                <div *ngFor="let d of filtered; let i = index" class="table-row">
+                    <div class="td small">{{ i + 1 }}</div>
+
+                    <div class="td">
+                        <!-- ✅ name only -->
+                        <div class="donor-name">{{ getDonorName(d) }}</div>
+
+                        <div class="donor-date">
+                            {{ d.createdAt ? (d.createdAt | date:'MMM d, y, h:mm:ss a') : '' }}
+                        </div>
+
+                        <!-- ✅ hover actions (hidden until hover) -->
+                        <div class="row-actions">
+                            <button class="edit" type="button" (click)="openEdit(d)">Edit</button>
+                            <button class="delete" type="button" (click)="deleteDonation(d)">Delete</button>
+                        </div>
+                    </div>
+
+                    <div class="td right">
+                        <div class="amount">₱ {{ d.amount | number:'1.2-2' }}</div>
+                    </div>
+                </div>
+
+                <div class="table-footer">
+                    <div></div>
+                    <div class="total">
+                        Total (filtered): ₱ {{ totalAmount | number:'1.2-2' }}
+                    </div>
+                </div>
+            </div>
+        </ng-container>
+    </section>
+
+    <!-- Add Cash Modal -->
+    <div *ngIf="showAddModal" class="modal-backdrop" (click)="closeAddModal()">
+        <div class="modal-card" (click)="$event.stopPropagation()">
+            <div class="modal-top">
+                <div>
+                    <div class="modal-title">Add Cash Donation</div>
+                    <div class="modal-subtitle">Record a donor who gave in cash.</div>
+                </div>
+
+                <button class="modal-close" type="button" (click)="closeAddModal()">×</button>
+            </div>
+
+            <div class="modal-grid">
+                <div class="field">
+                    <label>First Name</label>
+                    <input [(ngModel)]="cashFirstName" type="text" />
+                </div>
+
+                <div class="field">
+                    <label>Last Name</label>
+                    <input [(ngModel)]="cashLastName" type="text" />
+                </div>
+
+                <div class="field">
+                    <label>Amount (₱)</label>
+                    <input [(ngModel)]="cashAmount" type="number" min="1" />
+                </div>
+
+                <div class="field">
+                    <label>Donation Type</label>
+                    <select [(ngModel)]="cashDonationType">
+                        <option>Offering</option>
+                        <option>Kapaldanan</option>
+                        <option>KAPASALAMATAN</option>
+                        <option>Other</option>
+                    </select>
+                </div>
+
+                <!-- ✅ Only show when "Other" -->
+                <div class="field full" *ngIf="cashDonationType === 'Other'">
+                    <label>Custom Donation Type</label>
+                    <input [(ngModel)]="cashOtherDonationType" type="text" placeholder="Enter custom donation type" />
+                </div>
+
+                <div class="field full">
+                    <label>Date</label>
+                    <input [(ngModel)]="cashDateStr" type="date" />
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn-outline" type="button" (click)="closeAddModal()">Cancel</button>
+                <button class="btn-primary" type="button" (click)="saveCashDonation()" [disabled]="isSaving">
+                    {{ isSaving ? 'Saving...' : 'Save Donation' }}
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ✅ Edit Modal -->
+    <div *ngIf="showEditModal" class="modal-backdrop" (click)="closeEdit()">
+        <div class="modal-card" (click)="$event.stopPropagation()">
+            <div class="modal-top">
+                <div>
+                    <div class="modal-title">Edit Donation</div>
+                    <div class="modal-subtitle">Update donor name and amount.</div>
+                </div>
+                <button class="modal-close" type="button" (click)="closeEdit()">×</button>
+            </div>
+
+            <div class="modal-grid">
+                <div class="field full">
+                    <label>Donor Name</label>
+                    <input [(ngModel)]="editFullName" type="text" />
+                </div>
+
+                <div class="field full">
+                    <label>Amount (₱)</label>
+                    <input [(ngModel)]="editAmount" type="number" min="1" />
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn-outline" type="button" (click)="closeEdit()">Cancel</button>
+                <button class="btn-primary" type="button" (click)="saveEdit()">Save Changes</button>
+            </div>
+        </div>
+    </div>
+</main>

@@ -1,0 +1,135 @@
+<div class="giving-page">
+    <div class="container">
+        <h1 class="page-title">Online Giving</h1>
+        <p class="page-subtitle">
+            You can support our parish by sending your love offerings and donations through this secure form.
+        </p>
+
+        <div class="grid">
+            <!-- LEFT: FORM -->
+            <div class="card">
+                <h2 class="card-title">Make a Donation</h2>
+                <p class="card-subtitle">
+                    Your generous giving helps support our church ministry and community outreach.
+                </p>
+
+                <form [formGroup]="donationForm" (ngSubmit)="startReview()">
+                    <div class="two-col">
+                        <div class="field">
+                            <label>First Name</label>
+                            <input type="text" formControlName="firstName" placeholder="Enter first name" />
+                        </div>
+
+                        <div class="field">
+                            <label>Last Name</label>
+                            <input type="text" formControlName="lastName" placeholder="Enter last name" />
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label>Email Address</label>
+                        <input type="email" formControlName="email" placeholder="you@example.com" />
+                    </div>
+
+                    <div class="field">
+                        <label>Donation Type</label>
+                        <select formControlName="donationType">
+                            <option *ngFor="let t of donationTypeOptions" [value]="t">{{ t }}</option>
+                        </select>
+                    </div>
+
+                    <!-- ✅ shows only when "Other" is selected -->
+                    <div class="field" *ngIf="donationForm.get('donationType')?.value === 'Other'">
+                        <label>Specify Donation Type</label>
+                        <input type="text" formControlName="donationTypeOther"
+                            placeholder="Type sponsor/donation type" />
+                    </div>
+
+
+                    <!-- ✅ show only when Other is selected -->
+                    <div class="field" *ngIf="donationForm.get('donationType')?.value === '__OTHER__'">
+                        <label>Specify Donation Type</label>
+                        <input type="text" formControlName="donationTypeOther"
+                            placeholder="Type your sponsor/donation type" />
+                    </div>
+
+                    <div class="field">
+                        <label>Donation Amount</label>
+
+                        <div class="preset-row">
+                            <button type="button" class="chip" (click)="selectPresetAmount(25)">₱25</button>
+                            <button type="button" class="chip" (click)="selectPresetAmount(50)">₱50</button>
+                            <button type="button" class="chip" (click)="selectPresetAmount(100)">₱100</button>
+                            <button type="button" class="chip" (click)="selectPresetAmount(250)">₱250</button>
+                        </div>
+
+                        <div class="custom-row">
+                            <button type="button" class="chip outline" (click)="useCustomAmount()">Custom</button>
+                            <input type="number" formControlName="customAmount" placeholder="Enter custom amount" />
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label>GCash Reference Number (Proof of Transaction)</label>
+                        <input type="text" formControlName="referenceNo"
+                            placeholder="Enter reference number (digits only)" />
+                    </div>
+
+                    <div class="field">
+                        <label>Remarks / Intention (optional)</label>
+                        <textarea rows="4" formControlName="remarks" placeholder="Write a short note..."></textarea>
+                    </div>
+
+                    <button class="btn-primary" type="submit">Complete Donation</button>
+                </form>
+            </div>
+
+            <!-- RIGHT: GCASH -->
+            <div class="side">
+                <div class="side-card">
+                    <h3 class="side-title">GCash Details</h3>
+
+                    <div class="side-block">
+                        <div class="label">GCash Number</div>
+                        <div class="value">0917 123 4567</div>
+                    </div>
+
+                    <div class="label">Scan QR to Pay</div>
+                    <div class="qr-box">
+                        <img src="assets/gcash-qr.png" alt="GCash QR Code" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- REVIEW MODAL (your existing modal can stay) -->
+        <div *ngIf="showReviewModal && reviewData" class="modal-backdrop">
+            <div class="modal-card">
+                <div class="modal-top">
+                    <div>
+                        <div class="modal-title">Review Donation</div>
+                        <div class="modal-subtitle">Please confirm before submitting.</div>
+                    </div>
+                    <button class="modal-close" type="button" (click)="backToEdit()">×</button>
+                </div>
+
+                <div class="review">
+                    <p><b>Name:</b> {{ reviewData.firstName }} {{ reviewData.lastName }}</p>
+                    <p><b>Email:</b> {{ reviewData.email || '—' }}</p>
+                    <p><b>Amount:</b> ₱ {{ reviewData.amount | number:'1.2-2' }}</p>
+                    <p><b>Donation Type:</b> {{ reviewData.donationType }}</p>
+                    <p><b>Reference:</b> {{ reviewData.referenceNo || '—' }}</p>
+                    <p><b>Remarks:</b> {{ reviewData.remarks || '—' }}</p>
+                </div>
+
+                <div class="modal-actions">
+                    <button class="btn-outline" type="button" (click)="backToEdit()">Back</button>
+                    <button class="btn-primary" type="button" (click)="confirmAndSubmit()" [disabled]="isSubmitting">
+                        {{ isSubmitting ? 'Submitting...' : 'Confirm & Submit' }}
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
