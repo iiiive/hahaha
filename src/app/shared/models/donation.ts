@@ -1,10 +1,17 @@
-import { DonationType } from '../constants/donation-types';
-
 export interface Donation {
     donationId: number;
+    userId?: number | null;
     amount: number;
-    donationType: DonationType;
+    donationType: string;
     referenceNo?: string | null;
     remarks?: string | null;
-    createdAt?: string;
+
+    // ✅ NEW: from donations.donation_date
+    donationDate?: string | null;
+
+    donorName?: string;
+    paymentMethod?: string | null;
+    status?: string | null;
+
+    createdAt: string; // timestamp
 }

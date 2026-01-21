@@ -1,169 +1,202 @@
 /* src/app/modules/donations/donations.component.scss */
 
-:host {
-    display: block;
-}
-
 .donations-page {
-    min-height: calc(100vh - 80px);
-    padding: 32px 16px;
-
-    /* ✅ background image */
-    background: url('/assets/bg-church.png') no-repeat right center;
-    background-size: cover;
+    padding: 24px 0;
 }
 
 .container {
     max-width: 980px;
     margin: 0 auto;
+    padding: 0 16px;
 }
 
 .page-title {
     font-size: 34px;
     font-weight: 800;
-    color: #1f2937;
-    margin-bottom: 18px;
+    margin: 0 0 18px;
+    color: #111827;
 }
 
 .warning {
-    background: #fff7ed;
-    border: 1px solid #fed7aa;
-    color: #9a3412;
     padding: 12px 14px;
     border-radius: 10px;
+    border: 1px solid #f5c2c7;
+    background: #fff1f2;
+    color: #991b1b;
 }
 
+/* ===== Filters Card ===== */
 .filters-card {
-    background: rgba(255, 255, 255, 0.9);
-    border-radius: 12px;
-    padding: 18px;
-    box-shadow: 0 6px 22px rgba(0, 0, 0, 0.08);
-    margin-bottom: 14px;
+    background: #fff;
+    border-radius: 14px;
+    padding: 16px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+    border: 1px solid rgba(17, 24, 39, 0.08);
 }
 
 .filters-header {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
-    gap: 12px;
-    margin-bottom: 14px;
+    gap: 16px;
 }
 
 .filters-title {
     font-weight: 700;
     color: #111827;
+    font-size: 14px;
+}
+
+.filters-subtitle {
+    font-size: 12px;
+    opacity: 0.7;
 }
 
 .filters-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr 1.6fr;
-    gap: 12px;
-    margin-bottom: 14px;
+    grid-template-columns: 1fr 1fr 2fr;
+    gap: 14px;
+    margin-top: 12px;
 }
 
 .field label {
-    display: block;
     font-size: 12px;
-    color: #374151;
-    margin-bottom: 6px;
     font-weight: 600;
+    color: #374151;
+    display: block;
+    margin-bottom: 6px;
 }
 
 .field input,
 .field select {
     width: 100%;
     height: 38px;
-    border-radius: 8px;
-    border: 1px solid #d1d5db;
-    padding: 0 10px;
-    background: #fff;
+    border-radius: 10px;
+    border: 1px solid rgba(17, 24, 39, 0.14);
+    padding: 0 12px;
     outline: none;
+    background: #fff;
 }
 
 .field input:focus,
 .field select:focus {
-    border-color: #8b5cf6;
-    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
+    border-color: rgba(124, 58, 237, 0.7);
+    box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.15);
 }
 
+/* ===== Week Cards ===== */
 .weeks-row {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 10px;
+    margin-top: 12px;
 }
 
 .week-card {
-    background: #fff;
-    border: 1px solid #e5e7eb;
-    border-radius: 10px;
-    padding: 12px;
-    text-align: center;
+    border-radius: 12px;
+    border: 1px solid rgba(17, 24, 39, 0.12);
+    background: #f9fafb;
+    padding: 10px 12px;
     cursor: pointer;
+    text-align: left;
+    transition: 0.15s ease;
+}
+
+.week-card:hover {
+    background: #fff;
+    border-color: rgba(124, 58, 237, 0.45);
 }
 
 .week-card.active {
-    border-color: #8b5cf6;
-    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.12);
+    background: #fff;
+    border-color: rgba(124, 58, 237, 0.9);
+    box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.12);
 }
 
 .wk-title {
     font-weight: 800;
     color: #111827;
+    font-size: 13px;
 }
 
 .wk-range {
-    font-size: 12px;
-    color: #6b7280;
-    margin-top: 2px;
+    font-size: 11px;
+    opacity: 0.7;
 }
 
+/* ===== Buttons ===== */
+.btn-primary {
+    background: #6d28d9;
+    color: #fff;
+    border: none;
+    height: 38px;
+    padding: 0 14px;
+    border-radius: 10px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.btn-primary:hover {
+    filter: brightness(0.97);
+}
+
+.btn-outline {
+    background: transparent;
+    border: 1px solid rgba(17, 24, 39, 0.14);
+    height: 38px;
+    padding: 0 14px;
+    border-radius: 10px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+/* ===== Table ===== */
 .table-card {
-    background: rgba(255, 255, 255, 0.92);
-    border-radius: 12px;
+    background: #fff;
+    border-radius: 14px;
+    margin-top: 14px;
     overflow: hidden;
-    box-shadow: 0 6px 22px rgba(0, 0, 0, 0.08);
-}
-
-.table-head,
-.table-row {
-    display: grid;
-    grid-template-columns: 56px 1fr 200px;
-    align-items: center;
+    /* ✅ keep clean edges */
+    border: 1px solid rgba(17, 24, 39, 0.08);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
 }
 
 .table-head {
-    background: #111827;
-    color: #fff;
-    font-weight: 700;
-    font-size: 13px;
+    display: grid;
+    grid-template-columns: 56px 1fr 160px;
+    background: #0b1220;
+    color: #e5e7eb;
     padding: 12px 14px;
+    font-weight: 800;
+    font-size: 12px;
 }
 
 .table-row {
+    display: grid;
+    grid-template-columns: 56px 1fr 160px;
     padding: 14px;
-    border-top: 1px solid #e5e7eb;
+    border-top: 1px solid rgba(17, 24, 39, 0.06);
+    align-items: center;
 }
 
-.th,
-.td {}
+.th.right,
+.td.right {
+    text-align: right;
+}
 
 .small {
     opacity: 0.9;
 }
 
-.right {
-    text-align: right;
-}
-
 .donor-name {
-    font-weight: 700;
+    font-weight: 800;
     color: #111827;
 }
 
 .donor-date {
-    font-size: 12px;
-    color: #6b7280;
     margin-top: 2px;
+    font-size: 11px;
+    opacity: 0.65;
 }
 
 .amount {
@@ -171,71 +204,101 @@
     color: #111827;
 }
 
-.actions {
-    margin-top: 6px;
-}
-
-.delete {
-    background: transparent;
-    border: none;
-    color: #dc2626;
-    font-weight: 700;
-    cursor: pointer;
-}
-
-.delete:hover {
-    color: #991b1b;
-}
-
 .empty-row {
-    padding: 16px;
+    padding: 18px 14px;
     text-align: center;
-    color: #6b7280;
-    font-size: 13px;
+    opacity: 0.7;
 }
 
 .table-footer {
-    display: flex;
-    justify-content: space-between;
-    padding: 10px 14px;
-    border-top: 1px solid #e5e7eb;
-    color: #374151;
-    font-size: 13px;
+    display: grid;
+    grid-template-columns: 56px 1fr 160px;
+    padding: 12px 14px;
+    border-top: 1px solid rgba(17, 24, 39, 0.06);
+    background: #fbfbfb;
 }
 
 .total {
-    font-weight: 700;
+    text-align: right;
+    font-weight: 800;
 }
 
-.btn-primary {
-    background: #7c3aed;
-    border: none;
-    color: #fff;
-    padding: 10px 14px;
-    border-radius: 8px;
+/* ✅ New donor line layout (buttons left of name) */
+.donor-line {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* ✅ Smooth hover actions (no ugly pop) */
+.row-actions {
+    display: flex;
+    gap: 8px;
+
+    opacity: 0;
+    transform: translateX(-6px);
+    pointer-events: none;
+
+    transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.table-row:hover .row-actions {
+    opacity: 1;
+    transform: translateX(0);
+    pointer-events: auto;
+}
+
+.row-actions button {
+    border: 1px solid rgba(17, 24, 39, 0.14);
+    background: #fff;
+    border-radius: 10px;
+    height: 28px;
+    padding: 0 10px;
+    font-weight: 800;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.row-actions .edit {
+    color: #2563eb;
+}
+
+.row-actions .delete {
+    color: #dc2626;
+}
+
+/* ✅ Pagination (no scroll container) */
+.pagination {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 14px;
+    border-top: 1px solid rgba(17, 24, 39, 0.06);
+    background: #fff;
+}
+
+.pg-btn {
+    height: 34px;
+    padding: 0 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(17, 24, 39, 0.14);
+    background: #fff;
     font-weight: 800;
     cursor: pointer;
 }
 
-.btn-primary:hover {
-    background: #6d28d9;
+.pg-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
-.btn-outline {
-    background: #fff;
-    border: 1px solid #d1d5db;
-    color: #374151;
-    padding: 10px 14px;
-    border-radius: 8px;
-    font-weight: 700;
-    cursor: pointer;
+.pg-info {
+    font-size: 12px;
+    opacity: 0.8;
 }
 
-.btn-outline:hover {
-    background: #f9fafb;
-}
-
-/* Modal */
+/* ===== Modal ===== */
 .modal-backdrop {
     position: fixed;
     inset: 0;
@@ -243,24 +306,24 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 18px;
-    z-index: 50;
+    z-index: 9999;
 }
 
 .modal-card {
     width: 560px;
-    max-width: 95vw;
+    max-width: calc(100% - 32px);
     background: #fff;
-    border-radius: 12px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    border-radius: 14px;
     padding: 18px;
+    box-shadow: 0 15px 45px rgba(0, 0, 0, 0.25);
 }
 
 .modal-top {
     display: flex;
+    align-items: flex-start;
     justify-content: space-between;
-    gap: 10px;
-    margin-bottom: 14px;
+    gap: 12px;
+    margin-bottom: 12px;
 }
 
 .modal-title {
@@ -271,20 +334,15 @@
 
 .modal-subtitle {
     font-size: 12px;
-    color: #6b7280;
-    margin-top: 2px;
+    opacity: 0.7;
 }
 
 .modal-close {
-    background: transparent;
     border: none;
+    background: transparent;
     font-size: 22px;
     cursor: pointer;
-    color: #6b7280;
-}
-
-.modal-close:hover {
-    color: #111827;
+    line-height: 1;
 }
 
 .modal-grid {
@@ -293,7 +351,7 @@
     gap: 12px;
 }
 
-.full {
+.modal-grid .field.full {
     grid-column: 1 / -1;
 }
 
@@ -303,48 +361,3 @@
     gap: 10px;
     margin-top: 14px;
 }
-
-@media (max-width: 900px) {
-    .filters-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .weeks-row {
-        grid-template-columns: 1fr 1fr;
-    }
-
-    .table-head,
-    .table-row {
-        grid-template-columns: 48px 1fr 150px;
-    }
-}
-
-/* ✅ Row hover buttons (Edit/Delete) */
-.row-actions {
-    margin-top: 6px;
-    display: flex;
-    gap: 10px;
-
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.15s ease;
-}
-
-.table-row:hover .row-actions {
-    opacity: 1;
-    pointer-events: auto;
-}
-
-.edit {
-    background: transparent;
-    border: none;
-    color: #2563eb;
-    font-weight: 700;
-    cursor: pointer;
-}
-
-.edit:hover {
-    color: #1d4ed8;
-}
-
-/* keep your existing .delete styles */

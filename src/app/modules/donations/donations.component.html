@@ -52,22 +52,22 @@
                 <div class="weeks-row">
                     <button class="week-card" [class.active]="selectedWeek === 1" (click)="setWeek(1)">
                         <div class="wk-title">Week 1</div>
-                        <div class="wk-range">Jan 1–7</div>
+                        <div class="wk-range">{{ weekRangeLabel(1) }}</div>
                     </button>
 
                     <button class="week-card" [class.active]="selectedWeek === 2" (click)="setWeek(2)">
                         <div class="wk-title">Week 2</div>
-                        <div class="wk-range">Jan 8–14</div>
+                        <div class="wk-range">{{ weekRangeLabel(2) }}</div>
                     </button>
 
                     <button class="week-card" [class.active]="selectedWeek === 3" (click)="setWeek(3)">
                         <div class="wk-title">Week 3</div>
-                        <div class="wk-range">Jan 15–21</div>
+                        <div class="wk-range">{{ weekRangeLabel(3) }}</div>
                     </button>
 
                     <button class="week-card" [class.active]="selectedWeek === 4" (click)="setWeek(4)">
                         <div class="wk-title">Week 4</div>
-                        <div class="wk-range">Jan 22–31</div>
+                        <div class="wk-range">{{ weekRangeLabel(4) }}</div>
                     </button>
                 </div>
             </div>
@@ -84,27 +84,46 @@
                     No donations found for selected filters.
                 </div>
 
-                <div *ngFor="let d of filtered; let i = index" class="table-row">
-                    <div class="td small">{{ i + 1 }}</div>
+                <!-- ✅ PAGED LOOP (8 per page) -->
+                <div *ngFor="let d of pagedFiltered; let i = index" class="table-row">
+                    <div class="td small">{{ ((currentPage - 1) * pageSize) + i + 1 }}</div>
 
                     <div class="td">
-                        <!-- ✅ name only -->
-                        <div class="donor-name">{{ getDonorName(d) }}</div>
+                        <div class="donor-line">
+                            <div class="donor-name">{{ getDonorName(d) }}</div>
+
+                            <!-- ✅ buttons now to the right of the name (circled area) -->
+                            <div class="row-actions">
+                                <button class="edit" type="button" (click)="openEdit(d)">Edit</button>
+                                <button class="delete" type="button" (click)="deleteDonation(d)">Delete</button>
+                            </div>
+                        </div>
 
                         <div class="donor-date">
-                            {{ d.createdAt ? (d.createdAt | date:'MMM d, y, h:mm:ss a') : '' }}
-                        </div>
-
-                        <!-- ✅ hover actions (hidden until hover) -->
-                        <div class="row-actions">
-                            <button class="edit" type="button" (click)="openEdit(d)">Edit</button>
-                            <button class="delete" type="button" (click)="deleteDonation(d)">Delete</button>
+                            {{ (d.donationDate || d.createdAt) ? ((d.donationDate || d.createdAt) | date:'MMM d, y') :
+                            '' }}
                         </div>
                     </div>
+
 
                     <div class="td right">
                         <div class="amount">₱ {{ d.amount | number:'1.2-2' }}</div>
                     </div>
+                </div>
+
+                <!-- ✅ Pagination -->
+                <div class="pagination" *ngIf="filtered.length > pageSize">
+                    <button type="button" class="pg-btn" (click)="prevPage()" [disabled]="currentPage === 1">
+                        ‹ Prev
+                    </button>
+
+                    <div class="pg-info">
+                        Page <b>{{ currentPage }}</b> of <b>{{ totalPages }}</b>
+                    </div>
+
+                    <button type="button" class="pg-btn" (click)="nextPage()" [disabled]="currentPage === totalPages">
+                        Next ›
+                    </button>
                 </div>
 
                 <div class="table-footer">
@@ -117,7 +136,7 @@
         </ng-container>
     </section>
 
-    <!-- Add Cash Modal -->
+    <!-- Add Cash Modal (KEEP STRUCTURE AS IS) -->
     <div *ngIf="showAddModal" class="modal-backdrop" (click)="closeAddModal()">
         <div class="modal-card" (click)="$event.stopPropagation()">
             <div class="modal-top">
@@ -155,7 +174,6 @@
                     </select>
                 </div>
 
-                <!-- ✅ Only show when "Other" -->
                 <div class="field full" *ngIf="cashDonationType === 'Other'">
                     <label>Custom Donation Type</label>
                     <input [(ngModel)]="cashOtherDonationType" type="text" placeholder="Enter custom donation type" />
@@ -176,7 +194,7 @@
         </div>
     </div>
 
-    <!-- ✅ Edit Modal -->
+    <!-- Edit Modal -->
     <div *ngIf="showEditModal" class="modal-backdrop" (click)="closeEdit()">
         <div class="modal-card" (click)="$event.stopPropagation()">
             <div class="modal-top">

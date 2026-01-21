@@ -9,7 +9,6 @@ import { Donation } from '../../shared/models/donation';
 import { CreateDonationDto } from '../../shared/models/create-donation.dto';
 import { AuthService } from '../../core/services/auth.service';
 
-// ✅ Removed "Tithe", fixed spelling "KAPASALAMATAN", added "Other"
 type DonationTypeOption =
     | 'All Donations'
     | 'Offering'
@@ -30,6 +29,27 @@ export class DonationsComponent implements OnInit {
     donations: Donation[] = [];
     filtered: Donation[] = [];
 
+    // ✅ Pagination (SAFE: frontend only)
+    pageSize = 10;
+    currentPage = 1;
+
+    get totalPages(): number {
+        return Math.ceil(this.filtered.length / this.pageSize) || 1;
+    }
+
+    get pagedFiltered(): Donation[] {
+        const start = (this.currentPage - 1) * this.pageSize;
+        return this.filtered.slice(start, start + this.pageSize);
+    }
+
+    prevPage(): void {
+        if (this.currentPage > 1) this.currentPage--;
+    }
+
+    nextPage(): void {
+        if (this.currentPage < this.totalPages) this.currentPage++;
+    }
+
     months = [
         'January', 'February', 'March', 'April', 'May', 'June',
         'July', 'August', 'September', 'October', 'November', 'December'
@@ -49,12 +69,11 @@ export class DonationsComponent implements OnInit {
     cashAmount: number | null = null;
 
     cashDonationType: DonationTypeOption = 'Offering';
-    cashOtherDonationType = ''; // ✅ if "Other"
-
+    cashOtherDonationType = '';
     cashDateStr = this.toDateInputValue(new Date());
     isSaving = false;
 
-    // ✅ Edit modal
+    // Edit modal
     showEditModal = false;
     editDonationId: number | null = null;
     editFullName = '';
@@ -82,6 +101,13 @@ export class DonationsComponent implements OnInit {
         if (!value) return null;
         const d = new Date(value);
         return isNaN(d.getTime()) ? null : d;
+    }
+
+    // ✅ Use donationDate first, fallback to createdAt
+    private getEffectiveDate(d: Donation): Date | null {
+        const chosen = this.parseDate((d as any).donationDate);
+        if (chosen) return chosen;
+        return this.parseDate(d.createdAt);
     }
 
     private get monthStart(): Date {
@@ -113,18 +139,41 @@ export class DonationsComponent implements OnInit {
         if (this.selectedWeek > 4) this.selectedWeek = 0;
     }
 
+    // ✅ Week label text for the cards
+    weekRangeLabel(week: number): string {
+        const y = this.selectedYear;
+        const m = this.selectedMonthIndex;
+        const lastDay = new Date(y, m + 1, 0).getDate();
+        const monthShort = new Date(y, m, 1).toLocaleString('en-US', { month: 'short' });
+
+        const ranges: Record<number, [number, number]> = {
+            1: [1, Math.min(7, lastDay)],
+            2: [8, Math.min(14, lastDay)],
+            3: [15, Math.min(21, lastDay)],
+            4: [22, lastDay],
+        };
+
+        const [s, e] = ranges[week] || [1, lastDay];
+        return `${monthShort} ${s}–${e}`;
+    }
+
     // --------- API ----------
     loadDonations(): void {
         this.donationService.getAll().subscribe({
             next: (items) => {
                 this.donations = [...items].sort((a, b) => {
-                    const ad = this.parseDate(a.createdAt)?.getTime() ?? 0;
-                    const bd = this.parseDate(b.createdAt)?.getTime() ?? 0;
+                    const ad = this.getEffectiveDate(a)?.getTime() ?? 0;
+                    const bd = this.getEffectiveDate(b)?.getTime() ?? 0;
                     return bd - ad;
                 });
+
+                this.currentPage = 1; // ✅ reset page
                 this.applyFilters();
             },
-            error: () => this.toastr.error('Failed to load donations.'),
+            error: (err) => {
+                console.error('GET /donation failed:', err);
+                this.toastr.error('Failed to load donations.');
+            },
         });
     }
 
@@ -132,17 +181,20 @@ export class DonationsComponent implements OnInit {
     onMonthYearChange(): void {
         this.buildWeeks();
         this.selectedWeek = 0;
+        this.currentPage = 1; // ✅ reset page
         this.applyFilters();
     }
 
     setWeek(week: number): void {
         this.selectedWeek = week;
+        this.currentPage = 1; // ✅ reset page
         this.applyFilters();
     }
 
     setDonationTypeFilter(value: DonationTypeOption): void {
         this.donationTypeFilter = value;
         this.selectedWeek = 0;
+        this.currentPage = 1; // ✅ reset page
         this.applyFilters();
     }
 
@@ -151,49 +203,55 @@ export class DonationsComponent implements OnInit {
         const endExcl = this.monthEndExclusive;
 
         let list = this.donations.filter((d) => {
-            const created = this.parseDate(d.createdAt);
-            if (!created) return false;
-            return created >= start && created < endExcl;
+            const dt = this.getEffectiveDate(d);
+            if (!dt) return false;
+            return dt >= start && dt < endExcl;
         });
 
         if (this.donationTypeFilter !== 'All Donations') {
-            const want = this.donationTypeFilter.toLowerCase();
-            list = list.filter((d) => (d.donationType || '').toLowerCase() === want);
+            const fixed = ['offering', 'kapaldanan', 'kapasalamatan'];
+            const dtStr = (x: any) => String(x?.donationType || '').trim().toLowerCase();
+
+            if (this.donationTypeFilter === 'Other') {
+                list = list.filter(d => {
+                    const v = dtStr(d);
+                    return !!v && !fixed.includes(v);
+                });
+            } else {
+                const want = String(this.donationTypeFilter).trim().toLowerCase();
+                list = list.filter(d => dtStr(d) === want);
+            }
         }
 
         if (this.selectedWeek >= 1 && this.selectedWeek <= 4) {
             const wk = this.weeks[this.selectedWeek - 1];
             list = list.filter((d) => {
-                const created = this.parseDate(d.createdAt);
-                if (!created) return false;
-                return created >= wk.start && created <= wk.end;
+                const dt = this.getEffectiveDate(d);
+                if (!dt) return false;
+                return dt >= wk.start && dt <= wk.end;
             });
         }
 
         this.filtered = list;
+
+        // ✅ keep page valid after filtering
+        if (this.currentPage > this.totalPages) this.currentPage = this.totalPages;
+        if (this.currentPage < 1) this.currentPage = 1;
     }
 
     get totalAmount(): number {
         return this.filtered.reduce((sum, d) => sum + (Number(d.amount) || 0), 0);
     }
 
-    // ✅ Display ONLY the name (no "Name:")
     getDonorName(d: Donation): string {
         const raw = (d.remarks || '').trim();
-
-        // If remarks is empty, fallback:
         if (!raw) return 'Guest';
 
-        // If remarks format: "Full Name | Cash | 2026-01-09"
         const parts = raw.split('|').map(x => x.trim());
         let name = parts[0] || 'Guest';
-
-        // Remove unwanted "Name:" prefix if old data has it
         name = name.replace(/^name:\s*/i, '').trim();
-
         return name || 'Guest';
     }
-
 
     // --------- Add Cash Donation ----------
     openAddCashDonation(): void {
@@ -220,7 +278,6 @@ export class DonationsComponent implements OnInit {
             return;
         }
 
-        // ✅ Donation type final value
         let donationTypeFinal = this.cashDonationType;
         if (donationTypeFinal === 'Other') {
             const v = this.cashOtherDonationType.trim();
@@ -228,12 +285,10 @@ export class DonationsComponent implements OnInit {
                 this.toastr.warning('Please enter a custom donation type.');
                 return;
             }
-            donationTypeFinal = v as any; // stored as plain string
+            donationTypeFinal = v as any;
         }
 
         const fullName = `${this.cashFirstName.trim()} ${this.cashLastName.trim()}`;
-
-        // ✅ remarks store the name ONLY first (so table shows it clean)
         const remarks = `${fullName} | Cash | ${this.cashDateStr}`;
 
         const payload: CreateDonationDto = {
@@ -241,9 +296,8 @@ export class DonationsComponent implements OnInit {
             donationType: donationTypeFinal as any,
             referenceNo: null,
             remarks,
-            // ✅ IMPORTANT: If your Angular CreateDonationDto supports it, send paymentMethod:
-            // paymentMethod: 'Cash'
-        } as any;
+            donationDate: this.cashDateStr, // ✅ saved to donation_date
+        };
 
         this.isSaving = true;
 
@@ -255,14 +309,14 @@ export class DonationsComponent implements OnInit {
                 this.loadDonations();
             },
             error: (err: any) => {
-                console.error(err);
+                console.error('POST /donation failed:', err);
                 this.isSaving = false;
                 this.toastr.error('Failed to save cash donation.');
             }
         });
     }
 
-    // --------- Edit (name + amount) ----------
+    // --------- Edit ----------
     openEdit(d: Donation): void {
         this.editDonationId = d.donationId ?? null;
         this.editFullName = this.getDonorName(d);
@@ -277,7 +331,6 @@ export class DonationsComponent implements OnInit {
         this.editAmount = null;
     }
 
-    // ✅ Requires backend PUT/PATCH endpoint (I explain below)
     saveEdit(): void {
         if (!this.editDonationId) return;
         if (!this.editFullName.trim()) {
@@ -289,7 +342,6 @@ export class DonationsComponent implements OnInit {
             return;
         }
 
-        // Keep the original " | Cash | date" part if present
         const current = this.donations.find(x => x.donationId === this.editDonationId);
         const oldRemarks = (current?.remarks || '').trim();
         const suffix = oldRemarks.includes('|') ? oldRemarks.substring(oldRemarks.indexOf('|')) : '';
@@ -312,7 +364,6 @@ export class DonationsComponent implements OnInit {
         });
     }
 
-    // --------- delete ----------
     deleteDonation(d: Donation): void {
         if (!d.donationId) return;
         if (!confirm('Delete this donation record?')) return;
