@@ -9,15 +9,24 @@ export class AuthService {
   private tokenKey = 'token';
   private roleKey = 'role';
 
-  // Observable to track login state
   private loggedInSubject = new BehaviorSubject<boolean>(this.isAuthenticated());
   loggedIn$ = this.loggedInSubject.asObservable();
 
-  // Track admin role reactively
-  private isAdminSubject = new BehaviorSubject<boolean>(this.getRole() === 'admin');
+  // ✅ make admin detection resilient (case-insensitive)
+  private isAdminSubject = new BehaviorSubject<boolean>(this.isRoleAdmin(this.getRole()));
   isAdmin$ = this.isAdminSubject.asObservable();
 
-  constructor(private api: ApiService) { }
+  constructor(private api: ApiService) {
+    // ✅ On app refresh, if token exists but role missing, try to re-derive from token
+    const token = this.getToken();
+    if (token && !this.getRole()) {
+      const role = this.extractRoleFromToken(token);
+      if (role) {
+        localStorage.setItem(this.roleKey, role);
+        this.isAdminSubject.next(this.isRoleAdmin(role));
+      }
+    }
+  }
 
   login(credentials: { email: string; password: string }) {
     return this.api.post<any>('auth/login', credentials).pipe(
@@ -25,15 +34,12 @@ export class AuthService {
         if (res && res.token) {
           localStorage.setItem(this.tokenKey, res.token);
 
-          // Parse role from JWT and store
-          const payload = JSON.parse(atob(res.token.split('.')[1]));
-          const role = payload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
+          const role = this.extractRoleFromToken(res.token);
+          if (role) localStorage.setItem(this.roleKey, role);
+          else localStorage.removeItem(this.roleKey);
 
-          localStorage.setItem(this.roleKey, role);
-
-          // Notify reactive subscribers
           this.loggedInSubject.next(true);
-          this.isAdminSubject.next(role === 'Admin');
+          this.isAdminSubject.next(this.isRoleAdmin(role));
         }
       })
     );
@@ -42,7 +48,7 @@ export class AuthService {
   logout() {
     localStorage.removeItem(this.tokenKey);
     localStorage.removeItem(this.roleKey);
-    this.loggedInSubject.next(false); // notify subscribers
+    this.loggedInSubject.next(false);
     this.isAdminSubject.next(false);
   }
 
@@ -59,6 +65,42 @@ export class AuthService {
   }
 
   isAdmin(): boolean {
-    return this.getRole() === 'Admin';
+    return this.isRoleAdmin(this.getRole());
+  }
+
+  // ----------------- helpers -----------------
+
+  private isRoleAdmin(role: string | null | undefined): boolean {
+    return (role || '').toLowerCase() === 'admin';
+  }
+
+  private extractRoleFromToken(token: string): string | null {
+    try {
+      const payload = this.decodeJwtPayload(token);
+      if (!payload) return null;
+
+      // ✅ support different role claim keys
+      const role =
+        payload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] ??
+        payload['role'] ??
+        payload['Role'];
+
+      return typeof role === 'string' ? role : null;
+    } catch {
+      return null;
+    }
+  }
+
+  private decodeJwtPayload(token: string): any | null {
+    const parts = token.split('.');
+    if (parts.length < 2) return null;
+
+    // JWT payload is base64url
+    const base64Url = parts[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const padded = base64.padEnd(base64.length + (4 - (base64.length % 4)) % 4, '=');
+
+    const json = atob(padded);
+    return JSON.parse(json);
   }
 }

@@ -1,0 +1,264 @@
+:host {
+    display: block;
+}
+
+.giving-page {
+    min-height: calc(100vh - 80px);
+    padding: 32px 16px;
+
+    /* ✅ same background image as donations */
+    background: url('/assets/bg-church.png') no-repeat right center;
+    background-size: cover;
+}
+
+.container {
+    max-width: 1100px;
+    margin: 0 auto;
+}
+
+.page-title {
+    text-align: center;
+    font-size: 40px;
+    font-weight: 900;
+    color: #111827;
+    margin: 10px 0 6px;
+}
+
+.page-subtitle {
+    text-align: center;
+    color: #6b7280;
+    margin-bottom: 26px;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: 1fr 280px;
+    gap: 20px;
+    align-items: start;
+}
+
+.card {
+    background: rgba(255, 255, 255, 0.92);
+    border-radius: 12px;
+    padding: 18px;
+    box-shadow: 0 6px 22px rgba(0, 0, 0, 0.08);
+}
+
+.card-title {
+    font-weight: 900;
+    font-size: 18px;
+    color: #111827;
+}
+
+.card-subtitle {
+    color: #6b7280;
+    margin: 6px 0 14px;
+    font-size: 13px;
+}
+
+.two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.field {
+    margin-bottom: 12px;
+}
+
+.field label {
+    display: block;
+    font-size: 12px;
+    font-weight: 700;
+    color: #374151;
+    margin-bottom: 6px;
+}
+
+.field input,
+.field select,
+.field textarea {
+    width: 100%;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    padding: 10px;
+    outline: none;
+    background: #fff;
+}
+
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
+    border-color: #8b5cf6;
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
+}
+
+.preset-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+}
+
+.custom-row {
+    display: grid;
+    grid-template-columns: 88px 1fr;
+    gap: 10px;
+}
+
+.chip {
+    height: 32px;
+    padding: 0 12px;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+    background: #f3f4f6;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.chip:hover {
+    background: #e5e7eb;
+}
+
+.chip.outline {
+    background: #fff;
+}
+
+.btn-primary {
+    width: 100%;
+    margin-top: 8px;
+    background: #7c3aed;
+    border: none;
+    color: #fff;
+    padding: 12px 14px;
+    border-radius: 8px;
+    font-weight: 900;
+    cursor: pointer;
+}
+
+.btn-primary:hover {
+    background: #6d28d9;
+}
+
+.btn-outline {
+    background: #fff;
+    border: 1px solid #d1d5db;
+    color: #374151;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.side-card {
+    background: rgba(255, 255, 255, 0.92);
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: 0 6px 22px rgba(0, 0, 0, 0.08);
+}
+
+.side-title {
+    font-weight: 900;
+    margin-bottom: 10px;
+}
+
+.label {
+    font-size: 12px;
+    font-weight: 800;
+    color: #6b7280;
+    margin-top: 10px;
+}
+
+.value {
+    font-weight: 900;
+    color: #111827;
+}
+
+.qr-box {
+    margin-top: 10px;
+    border: 1px dashed #cbd5e1;
+    border-radius: 10px;
+    padding: 10px;
+    display: flex;
+    justify-content: center;
+    background: #fff;
+}
+
+.qr-box img {
+    max-width: 100%;
+    height: auto;
+}
+
+/* MODAL */
+.modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 18px;
+    z-index: 50;
+}
+
+.modal-card {
+    width: 560px;
+    max-width: 95vw;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    padding: 18px;
+}
+
+.modal-top {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.modal-title {
+    font-size: 18px;
+    font-weight: 900;
+    color: #111827;
+}
+
+.modal-subtitle {
+    font-size: 12px;
+    color: #6b7280;
+    margin-top: 2px;
+}
+
+.modal-close {
+    background: transparent;
+    border: none;
+    font-size: 22px;
+    cursor: pointer;
+    color: #6b7280;
+}
+
+.modal-close:hover {
+    color: #111827;
+}
+
+.review p {
+    margin: 6px 0;
+    color: #374151;
+    font-size: 13px;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 14px;
+}
+
+@media (max-width: 900px) {
+    .grid {
+        grid-template-columns: 1fr;
+    }
+
+    .two-col {
+        grid-template-columns: 1fr;
+    }
+}

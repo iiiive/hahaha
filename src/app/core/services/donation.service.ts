@@ -1,50 +1,34 @@
-import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Amanu } from '../../shared/models/amanu';
 import { environment } from '../../environments/environment';
+import { Donation } from '../../shared/models/donation';
+import { CreateDonationDto } from '../../shared/models/create-donation.dto';
 
-@Injectable({
-  providedIn: 'root'
-})
-export class AmanuService {
-
-  private readonly apiUrl = `${environment.apiUrl}/Donation`;
+@Injectable({ providedIn: 'root' })
+export class DonationService {
+  private baseUrl = `${environment.apiUrl}/Donation`;
 
   constructor(private http: HttpClient) { }
 
-  private getAuthHeaders(): HttpHeaders {
-    const token = localStorage.getItem('token');
-    return new HttpHeaders({
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`
-    });
+  getAll(): Observable<Donation[]> {
+    return this.http.get<Donation[]>(this.baseUrl);
   }
 
-  // GET all
-  getAll(): Observable<Amanu[]> {
-    return this.http.get<Amanu[]>(this.apiUrl, { headers: this.getAuthHeaders() });
+  getById(id: number): Observable<Donation> {
+    return this.http.get<Donation>(`${this.baseUrl}/${id}`);
   }
 
-  // GET by id
-  getById(id: number): Observable<Amanu> {
-    return this.http.get<Amanu>(`${this.apiUrl}/${id}`, { headers: this.getAuthHeaders() });
+  // ✅ Create uses DTO (not full Donation)
+  create(dto: CreateDonationDto): Observable<Donation> {
+    return this.http.post<Donation>(this.baseUrl, dto);
   }
 
-  // POST create
-  create(amanu: Partial<Amanu>): Observable<Amanu> {
-    const { id, ...payload } = amanu;
-    return this.http.post<Amanu>(this.apiUrl, payload, { headers: this.getAuthHeaders() });
+  update(id: number, donation: Donation): Observable<Donation> {
+    return this.http.put<Donation>(`${this.baseUrl}/${id}`, donation);
   }
 
-  // PUT update
-  update(id: number, dto: Amanu): Observable<Amanu> {
-    return this.http.put<Amanu>(`${this.apiUrl}/${id}`, dto, { headers: this.getAuthHeaders() });
-  }
-
-
-  // DELETE
   delete(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/${id}`, { headers: this.getAuthHeaders() });
+    return this.http.delete<void>(`${this.baseUrl}/${id}`);
   }
 }
