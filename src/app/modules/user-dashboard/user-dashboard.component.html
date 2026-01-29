@@ -1,0 +1,125 @@
+<main class="user-dashboard">
+
+  <section *ngIf="error" class="error-card">
+    {{ error }}
+  </section>
+
+  <section class="grid">
+    <!-- ONLINE GIVING -->
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">Online Giving</div>
+          <div class="muted small">
+            Total Donations: <b>{{ data.donations.count }}</b> •
+            Total Amount: <b>₱{{ money(data.donations.totalAmount) }}</b>
+          </div>
+        </div>
+      </div>
+
+      <div class="list" *ngIf="data.donations.recent?.length; else noDonations">
+        <div class="row" *ngFor="let x of data.donations.recent">
+          <div class="row-left">
+            <div class="strong">{{ donationTypeLabel(x) }}</div>
+            <div class="muted small">
+              Reference No.: {{ get(x,'referenceNo') || get(x,'ReferenceNo') || '—' }}
+            </div>
+          </div>
+          <div class="row-right">
+            <div class="strong">₱{{ money(get(x,'amount') || get(x,'Amount')) }}</div>
+            <div class="muted small">
+              {{ fmtDate(get(x,'createdAt') || get(x,'CreatedAt')) }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <ng-template #noDonations>
+        <div class="empty muted">No recent donations available.</div>
+      </ng-template>
+    </div>
+
+    <!-- DOCUMENT REQUESTS -->
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">Document Requests</div>
+          <div class="muted small">
+            Total Requests: <b>{{ data.documents.count }}</b>
+          </div>
+        </div>
+      </div>
+
+      <div class="list" *ngIf="data.documents.recent?.length; else noDocs">
+        <div class="row" *ngFor="let r of data.documents.recent">
+          <div class="row-left">
+            <div class="strong">
+              {{ get(r,'documentType') || get(r,'DocumentType') || 'Document' }}
+            </div>
+            <div class="muted small">
+              Number of Copies:
+              {{ get(r,'numberOfCopies') || get(r,'NumberOfCopies') || '—' }}
+            </div>
+          </div>
+
+          <div class="row-right">
+            <div
+              class="pill"
+              [class.ready]="(get(r,'status') || get(r,'Status')) === 'ReadyForPickup'"
+              [class.claimed]="(get(r,'status') || get(r,'Status')) === 'Claimed'"
+              [class.rejected]="(get(r,'status') || get(r,'Status')) === 'Rejected'"
+            >
+              {{ (get(r,'status') || get(r,'Status')) || 'Pending' }}
+            </div>
+            <div class="muted small">
+              {{ fmtDate(get(r,'createdAt') || get(r,'CreatedAt')) }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <ng-template #noDocs>
+        <div class="empty muted">No document requests found.</div>
+      </ng-template>
+    </div>
+
+    <!-- SCHEDULING -->
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">Service Scheduling</div>
+          <div class="muted small">
+            Total Schedules: <b>{{ data.scheduling.count }}</b>
+          </div>
+        </div>
+      </div>
+
+      <div class="list" *ngIf="data.scheduling.recent?.length; else noSched">
+        <div class="row" *ngFor="let s of data.scheduling.recent">
+          <div class="row-left">
+            <div class="strong">
+              {{ get(s,'serviceType') || get(s,'ServiceType') || 'Service' }}
+            </div>
+            <div class="muted small">
+              {{ fmtDate(get(s,'serviceDate') || get(s,'ServiceDate')) }}
+              • {{ get(s,'serviceTime') || get(s,'ServiceTime') || '' }}
+            </div>
+          </div>
+
+          <div class="row-right">
+            <div class="pill">
+              {{ get(s,'status') || get(s,'Status') || '—' }}
+            </div>
+            <div class="muted small">
+              {{ fmtDate(get(s,'createdAt') || get(s,'CreatedAt')) }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <ng-template #noSched>
+        <div class="empty muted">No scheduled services available.</div>
+      </ng-template>
+    </div>
+  </section>
+</main>

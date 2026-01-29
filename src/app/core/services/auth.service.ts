@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { ApiService } from './api.service';
 import { BehaviorSubject, tap } from 'rxjs';
+import { Router } from '@angular/router';
 
 @Injectable({
   providedIn: 'root'
@@ -12,12 +13,12 @@ export class AuthService {
   private loggedInSubject = new BehaviorSubject<boolean>(this.isAuthenticated());
   loggedIn$ = this.loggedInSubject.asObservable();
 
-  // ✅ make admin detection resilient (case-insensitive)
+  // ✅ admin detection resilient (case-insensitive)
   private isAdminSubject = new BehaviorSubject<boolean>(this.isRoleAdmin(this.getRole()));
   isAdmin$ = this.isAdminSubject.asObservable();
 
-  constructor(private api: ApiService) {
-    // ✅ On app refresh, if token exists but role missing, try to re-derive from token
+  constructor(private api: ApiService, private router: Router) {
+    // ✅ On refresh: if token exists but role missing, derive role from token
     const token = this.getToken();
     if (token && !this.getRole()) {
       const role = this.extractRoleFromToken(token);
@@ -29,9 +30,10 @@ export class AuthService {
   }
 
   login(credentials: { email: string; password: string }) {
-    return this.api.post<any>('auth/login', credentials).pipe(
+    // ✅ Match Swagger route: /api/Auth/login
+    return this.api.post<any>('Auth/login', credentials).pipe(
       tap(res => {
-        if (res && res.token) {
+        if (res?.token) {
           localStorage.setItem(this.tokenKey, res.token);
 
           const role = this.extractRoleFromToken(res.token);
@@ -48,8 +50,12 @@ export class AuthService {
   logout() {
     localStorage.removeItem(this.tokenKey);
     localStorage.removeItem(this.roleKey);
+
     this.loggedInSubject.next(false);
     this.isAdminSubject.next(false);
+
+    // ✅ FIX: go back to first page immediately (no refresh needed)
+    this.router.navigateByUrl('/login'); // change to '/' if your first page is home
   }
 
   getToken() {

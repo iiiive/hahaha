@@ -1,0 +1,84 @@
+<main class="page">
+  <section class="card">
+    <header class="header">
+      <div>
+        <h2>Create User</h2>
+        <p>Add a new account to the system.</p>
+      </div>
+
+      <button type="button" class="btn ghost" (click)="cancel()">Back</button>
+    </header>
+
+    <form [formGroup]="form" (ngSubmit)="submit()" class="form">
+      <div class="grid">
+        <div class="field">
+          <label>First Name</label>
+          <input type="text" formControlName="firstName" placeholder="Juan" />
+          <small class="error" *ngIf="f['firstName'].touched && f['firstName'].invalid">
+            First name is required.
+          </small>
+        </div>
+
+        <div class="field">
+          <label>Last Name</label>
+          <input type="text" formControlName="lastName" placeholder="Dela Cruz" />
+          <small class="error" *ngIf="f['lastName'].touched && f['lastName'].invalid">
+            Last name is required.
+          </small>
+        </div>
+
+        <div class="field">
+          <label>Email</label>
+          <input type="email" formControlName="email" placeholder="name@email.com" />
+          <small class="error" *ngIf="f['email'].touched && f['email'].invalid">
+            Enter a valid email.
+          </small>
+        </div>
+
+        <div class="field">
+          <label>Password</label>
+          <div class="password-wrap">
+            <input
+              [type]="showPassword ? 'text' : 'password'"
+              formControlName="password"
+              placeholder="Min 6 characters"
+              autocomplete="new-password"
+            />
+            <button type="button" class="btn tiny" (click)="togglePassword()">
+              {{ showPassword ? 'Hide' : 'Show' }}
+            </button>
+          </div>
+          <small class="error" *ngIf="f['password'].touched && f['password'].invalid">
+            Password is required (min 6 chars).
+          </small>
+        </div>
+
+        <div class="field">
+          <label>Role</label>
+          <select formControlName="roleId">
+  <option [ngValue]="1">Admin</option>
+  <option [ngValue]="2">User</option>
+</select>
+
+        </div>
+
+        <div class="field checkbox">
+          <label>
+            <input type="checkbox" formControlName="isActive" />
+            Active
+          </label>
+        </div>
+      </div>
+
+      <footer class="actions">
+        <button type="button" class="btn ghost" (click)="cancel()" [disabled]="loading">
+          Cancel
+        </button>
+
+        <button type="submit" class="btn primary" [disabled]="loading">
+          {{ loading ? 'Creating...' : 'Create User' }}
+        </button>
+      </footer>
+    </form>
+  </section>
+</main>

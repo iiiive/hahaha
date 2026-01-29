@@ -1,0 +1,186 @@
+/* =========================================
+   ADMIN USERS (APPROVALS) — CLEAN PURPLE THEME
+   Put this inside the component .scss
+========================================= */
+
+:host {
+  /* theme vars (component-safe, no :root needed) */
+  --purple: #6f6ad8;
+  --purple-dark: #5c57c9;
+  --purple-soft: rgba(111, 106, 216, 0.12);
+
+  --text: #1f2937;
+  --muted: #6b7280;
+  --border: #e9e9e9;
+  --row: #fafafa;
+}
+
+/* ===== Card ===== */
+.admin-users-card {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 18px 20px;
+  margin-top: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+}
+
+/* ===== Header ===== */
+.admin-users-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+
+  h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text);
+  }
+}
+
+/* ===== Tabs ===== */
+.tabs {
+  display: flex;
+  gap: 8px;
+}
+
+.tab {
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  background: transparent;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+  cursor: default;
+}
+
+/* your HTML uses: class="tab active" */
+.tab.active {
+  background: var(--purple);
+  color: #fff;
+  border-color: var(--purple);
+  box-shadow: 0 4px 10px rgba(111, 106, 216, 0.25);
+}
+
+/* ===== Table ===== */
+.users-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 10px;
+}
+
+/* head */
+.users-table thead th {
+  padding: 10px 12px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* rows */
+.users-table tbody tr {
+  background: var(--row);
+}
+
+.users-table tbody td {
+  padding: 12px;
+  font-size: 13px;
+  color: #374151;
+  vertical-align: middle;
+  border-top: 1px solid #f0f0f0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.users-table tbody tr td:first-child {
+  border-left: 1px solid #f0f0f0;
+  border-top-left-radius: 12px;
+  border-bottom-left-radius: 12px;
+}
+
+.users-table tbody tr td:last-child {
+  border-right: 1px solid #f0f0f0;
+  border-top-right-radius: 12px;
+  border-bottom-right-radius: 12px;
+}
+
+/* ===== Status pill ===== */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid #ddd;
+  font-size: 12px;
+  font-weight: 700;
+  background: #f6f6f8;
+  color: #555;
+}
+
+/* ===== Actions layout ===== */
+.actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-start;
+  align-items: center;
+}
+
+/* ===== Buttons (purple theme) ===== */
+.btn {
+  padding: 7px 12px;
+  border-radius: 10px;
+  border: 1.5px solid transparent;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+/* Approve — purple outline */
+.btn.approve {
+  background: #fff;
+  border-color: var(--purple);
+  color: var(--purple);
+}
+
+.btn.approve:hover {
+  background: var(--purple-soft);
+}
+
+/* Decline — soft purple fill */
+.btn.decline {
+  background: var(--purple-soft);
+  color: var(--purple-dark);
+  border-color: transparent;
+}
+
+.btn.decline:hover {
+  background: rgba(111, 106, 216, 0.18);
+}
+
+/* Disabled */
+.btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* ===== Text helpers ===== */
+.muted {
+  color: var(--muted);
+  font-size: 13px;
+  margin-top: 8px;
+}
+
+.error {
+  color: #c0362c;
+  font-size: 13px;
+  margin-top: 8px;
+}

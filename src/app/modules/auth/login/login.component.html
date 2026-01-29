@@ -1,40 +1,51 @@
-<!-- Admin Login Modal -->
-<div *ngIf="showModal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
-  <div class="bg-white rounded-xl w-full max-w-md p-6 relative shadow-2xl">
+<!-- Fullscreen Login Page -->
+<div class="login-page">
 
-    <!-- Close Button -->
-    <button *ngIf="authService.isAuthenticated()" (click)="closeModal()"
-      class="absolute top-3 right-3 text-gray-500 hover:text-gray-700" aria-label="Close">✕</button>
+  <!-- Background image -->
+  <div class="login-bg" aria-hidden="true"></div>
 
-    <!-- Title -->
-    <h3 class="text-xl font-bold text-gray-900">Admin Login</h3>
-    <!-- <p class="text-sm text-gray-500 mb-4">Admins only.</p> -->
+  <!-- Dark overlay -->
+  <div class="login-overlay" aria-hidden="true"></div>
 
-    <!-- Login Form -->
-    <form (ngSubmit)="onSubmit()" [formGroup]="loginForm" class="space-y-4">
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Email</label>
-        <input type="email" formControlName="email" class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 
-                 focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent"
-          placeholder="admin@example.com" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Password</label>
-        <input type="password" formControlName="password" class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 
-                 focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent"
-          placeholder="••••••••" />
+  <!-- Centered card -->
+  <div class="login-card">
+    <h3 class="login-title">WELCOME BACK</h3>
+    <p class="login-subtitle">Sign in to continue</p>
+
+    <form (ngSubmit)="onSubmit()" [formGroup]="loginForm" class="login-form">
+      <div class="field">
+        <label class="label">Email</label>
+        <input
+          type="email"
+          formControlName="email"
+          class="input"
+          placeholder="apunglourdes@app.com"
+        />
       </div>
 
-      <!-- Submit Button -->
-      <button type="submit" class="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white 
-               font-semibold py-2.5 rounded-lg hover:from-purple-700 hover:to-blue-700 
-               focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-600">
-        Sign in
+      <div class="field">
+        <label class="label">Password</label>
+        <input
+          type="password"
+          formControlName="password"
+          class="input"
+          placeholder="••••••••"
+        />
+      </div>
+
+      <button type="submit" class="btn-primary">
+        Sign In
       </button>
+
+      <div class="register">
+        <span class="muted">Don't have an account?</span>
+        <button type="button" class="btn-link" (click)="goToRegister()">
+          Create Account
+        </button>
+      </div>
     </form>
 
-    <!-- Message -->
-    <p *ngIf="loginMessage" class="mt-3 text-sm text-red-500">{{ loginMessage }}</p>
+    <p *ngIf="loginMessage" class="error">{{ loginMessage }}</p>
   </div>
+
 </div>
-<!-- End of Admin Login Modal -->

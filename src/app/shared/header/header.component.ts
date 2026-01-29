@@ -1,15 +1,8 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectorRef, Component } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { LoginComponent } from '../../modules/auth/login/login.component';
 import { AuthService } from '../../core/services/auth.service';
-
-interface User {
-  firstName: string;
-  lastName: string;
-  email: string;
-  password: string;
-  role: string;
-}
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-header',
@@ -18,32 +11,57 @@ interface User {
   templateUrl: './header.component.html',
   styleUrls: ['./header.component.scss']
 })
-export class HeaderComponent {
+export class HeaderComponent implements OnInit, OnDestroy {
   isLoggedIn = false;
   isAdmin = false;
-  currentDate = new Date();
+
+  // template uses date pipe → keep Date type
+  currentDate: Date = new Date();
+
   showModal = false;
 
-  constructor(private authService: AuthService, private cdr: ChangeDetectorRef) {
-    // Initial state
-    this.isLoggedIn = this.authService.isAuthenticated();
-    this.isAdmin = this.authService.getRole() === 'Admin';
-    this.showModal = !this.isLoggedIn; // show login modal initially if not logged in
+  private sub?: Subscription;
+  private timerId: any;
 
-    // Subscribe to login/logout changes
-    this.authService.loggedIn$.subscribe(loggedIn => {
+  constructor(private authService: AuthService) {}
+
+  ngOnInit(): void {
+    this.refreshAuthState();
+
+    // ✅ update header date every 30s
+    this.timerId = setInterval(() => {
+      this.currentDate = new Date();
+    }, 30000);
+
+    // ✅ listen for login/logout
+    this.sub = this.authService.loggedIn$.subscribe((loggedIn) => {
       this.isLoggedIn = loggedIn;
-      this.isAdmin = this.authService.getRole() === 'admin';
+      this.isAdmin = this.isRoleAdmin();
 
-      // Show modal automatically when user logs out
-      this.showModal = !loggedIn;
-
-      this.cdr.detectChanges(); // ensure template updates
+      // ✅ IMPORTANT: don’t auto-open modal (prevents blocking clicks on /register)
+      if (!loggedIn) this.showModal = false;
     });
   }
 
-  // Show/hide login modal
-  onLoginClick() {
+  ngOnDestroy(): void {
+    if (this.sub) this.sub.unsubscribe();
+    if (this.timerId) clearInterval(this.timerId);
+  }
+
+  private refreshAuthState(): void {
+    this.isLoggedIn = this.authService.isAuthenticated();
+    this.isAdmin = this.isRoleAdmin();
+
+    // ✅ do NOT force modal open automatically
+    this.showModal = false;
+  }
+
+  private isRoleAdmin(): boolean {
+    const role = this.authService.getRole();
+    return (role || '').toLowerCase() === 'admin';
+  }
+
+  onLoginClick(): void {
     if (this.isLoggedIn) {
       this.logout();
     } else {
@@ -51,27 +69,18 @@ export class HeaderComponent {
     }
   }
 
-  closeModal() {
+  closeModal(): void {
     this.showModal = false;
-    this.updateLoginStatus(); // refresh after login
+    this.refreshAuthState();
   }
 
-  // Logout user
-  logout() {
-    this.authService.logout(); // removes token & role    
+  logout(): void {
+    this.authService.logout();
+    this.refreshAuthState();
   }
 
-  // Check login & role status
-  updateLoginStatus() {
-    this.isLoggedIn = this.authService.isAuthenticated();
-    this.isAdmin = this.authService.getRole() === 'admin';
-  }
-
-  onUserLoggedIn() {
+  onUserLoggedIn(): void {
     this.showModal = false;
-    this.updateLoginStatus(); // refresh isLoggedIn & isAdmin
-
-    // Force template update
-    this.cdr.detectChanges();
+    this.refreshAuthState();
   }
 }

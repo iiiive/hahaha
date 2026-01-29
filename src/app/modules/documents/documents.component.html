@@ -1,711 +1,539 @@
-<main class="max-w-6xl mx-auto px-4 md:px-6 lg:px-8" [ngClass]="isAdmin ? 'py-6' : 'py-8'">
-    <!-- Documents -->
-    <section id="Documents" class="section">
-        <h2 class="text-4xl font-bold text-gray-800 mb-8" [ngClass]="isAdmin ? '' : 'text-center'">
-            Church Documents Management
-        </h2>
+<main class="max-w-6xl mx-auto px-4 md:px-6 lg:px-8 py-8">
+  <!-- Documents -->
+  <section id="Documents" class="section">
+    <h2 class="text-4xl font-bold text-gray-800 mb-8" [ngClass]="isAdmin ? '' : 'text-center'">
+      Church Documents Management
+    </h2>
 
-        <!-- ================= ADMIN LAYOUT (3 COLUMNS, WIDER CENTER) ================= -->
-        <div *ngIf="isAdmin; else userDocumentsLayout"
-            class="w-full mx-auto grid grid-cols-1 lg:grid-cols-[1.1fr,1.8fr,1.1fr] gap-8">
+    <!-- ================= ADMIN LAYOUT ================= -->
+    <div *ngIf="isAdmin; else userDocumentsLayout"
+         class="w-full mx-auto grid grid-cols-1 lg:grid-cols-[1.1fr,1.8fr,1.1fr] gap-8">
 
-            <!-- LEFT: Recent Requests + filter (like Scheduling) -->
-            <div class="bg-white rounded-lg card-shadow p-6">
-                <h3 class="text-lg font-semibold text-gray-800 mb-3">Recent Requests</h3>
+      <!-- LEFT: Recent Requests + filter -->
+      <div class="bg-white rounded-lg card-shadow p-6">
+        <h3 class="text-lg font-semibold text-gray-800 mb-3">Recent Requests</h3>
 
-                <!-- Filter buttons by document type -->
-                <div class="flex flex-wrap gap-2 mb-4">
-                    <button type="button" *ngFor="let f of docTypeFilters" (click)="setDocFilter(f.key)"
-                        class="px-3 py-1 rounded-full text-xs font-medium border" [ngClass]="
-                            selectedDocFilter === f.key
-                                ? 'bg-purple-600 text-white border-purple-600'
-                                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                        ">
-                        {{ f.label }}
-                    </button>
-                </div>
-
-                <div *ngIf="filteredRequests.length > 0; else noRequestsAdmin" class="space-y-3">
-                    <div *ngFor="let req of filteredRequests" [ngClass]="{
-                            'border-l-4 p-3 rounded-r-lg': true,
-                            'border-green-500 bg-green-50': req.status === 'Ready',
-                            'border-yellow-500 bg-yellow-50': req.status === 'Processing',
-                            'border-blue-500 bg-blue-50': req.status === 'Submitted'
-                        }">
-                        <div class="flex justify-between items-center">
-                            <div>
-                                <h4 class="font-medium text-gray-800 text-sm">
-                                    {{ getDocumentTypeLabel(req.documentType) }}
-                                </h4>
-                                <p class="text-xs text-gray-600">
-                                    {{ req.firstName }} {{ req.lastName }}
-                                </p>
-                                <p class="text-xs" [ngClass]="{
-                                        'text-green-600': req.status === 'Ready',
-                                        'text-yellow-600': req.status === 'Processing',
-                                        'text-blue-600': req.status === 'Submitted'
-                                    }">
-                                    {{ req.status }}
-                                </p>
-                            </div>
-
-                            <div class="flex items-center space-x-2">
-                                <!-- Status badge -->
-                                <span class="text-xs font-medium px-2 py-1 rounded" [ngClass]="{
-                                        'bg-green-100 text-green-800': req.status === 'Ready',
-                                        'bg-yellow-100 text-yellow-800': req.status === 'Processing',
-                                        'bg-blue-100 text-blue-800': req.status === 'Submitted'
-                                    }">
-                                    {{ req.status }}
-                                </span>
-
-                                <!-- Edit -->
-                                <button (click)="editRequest(req)" class="text-blue-600 hover:text-blue-800 text-sm">
-                                    ✎
-                                </button>
-
-                                <!-- Delete -->
-                                <button (click)="deleteRequest(req.id)" class="text-red-600 hover:text-red-800 text-sm">
-                                    ✖
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <ng-template #noRequestsAdmin>
-                    <p class="text-sm text-gray-500">No requests yet.</p>
-                </ng-template>
-            </div>
-
-            <!-- CENTER: Document request form (now wider) -->
-            <div class="bg-white rounded-lg card-shadow p-6">
-                <ng-container *ngTemplateOutlet="documentForm"></ng-container>
-            </div>
-
-            <!-- RIGHT: Quick Actions (admin) -->
-            <div class="space-y-6">
-                <div class="bg-white rounded-lg card-shadow p-6">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-4">Quick Actions</h3>
-                    <div class="space-y-2">
-                        <a href="#"
-                            class="w-full block text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md transition duration-200">
-                            View All Requests
-                        </a>
-                        <a href="#"
-                            class="w-full block text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md transition duration-200">
-                            Ready for Pickup
-                        </a>
-                        <a href="#"
-                            class="w-full block text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md transition duration-200">
-                            Currently Processing
-                        </a>
-                        <a href="#"
-                            class="w-full block text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md transition duration-200">
-                            Print Request List
-                        </a>
-                    </div>
-                </div>
-            </div>
+        <!-- Filter buttons by document type -->
+        <div class="flex flex-wrap gap-2 mb-4">
+          <button type="button"
+                  *ngFor="let f of docTypeFilters"
+                  (click)="setDocFilter(f.key)"
+                  class="px-3 py-1 rounded-full text-xs font-medium border"
+                  [ngClass]="selectedDocFilter === f.key
+                    ? 'bg-purple-600 text-white border-purple-600'
+                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'">
+            {{ f.label }}
+          </button>
         </div>
 
-        <!-- ================= USER LAYOUT (FORM + RIGHT PANELS) ================= -->
-        <ng-template #userDocumentsLayout>
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <!-- Form card -->
-                <div class="lg:col-span-2">
-                    <div class="bg-white rounded-lg card-shadow p-6">
-                        <ng-container *ngTemplateOutlet="documentForm"></ng-container>
-                    </div>
+        <!-- ✅ SCROLLABLE LIST -->
+        <div class="max-h-[520px] overflow-y-auto pr-1">
+          <div *ngIf="filteredRequests.length > 0; else noRequestsAdmin" class="space-y-3">
+            <div *ngFor="let req of filteredRequests"
+                 [ngClass]="{
+                  'border-l-4 p-3 rounded-r-lg': true,
+                  'border-gray-300 bg-gray-50': (req.status === 'Pending' || !req.status),
+                  'border-green-500 bg-green-50': req.status === 'ReadyForPickup',
+                  'border-blue-500 bg-blue-50': req.status === 'Claimed',
+                  'border-red-500 bg-red-50': req.status === 'Rejected'
+                 }">
+
+              <div class="flex justify-between items-center gap-3">
+                <!-- LEFT TEXT -->
+                <div class="min-w-0">
+                  <h4 class="font-medium text-gray-800 text-sm truncate">
+                    {{ getDocumentTypeLabel(req.documentType) }}
+                  </h4>
+                  <p class="text-xs text-gray-600 truncate">
+                    {{ req.firstName }} {{ req.lastName }}
+                  </p>
+
+                  <p class="text-xs mt-1"
+                     [ngClass]="{
+                      'text-gray-600': (req.status === 'Pending' || !req.status),
+                      'text-green-600': req.status === 'ReadyForPickup',
+                      'text-blue-600': req.status === 'Claimed',
+                      'text-red-600': req.status === 'Rejected'
+                     }">
+                    {{ req.status || 'Pending' }}
+                  </p>
                 </div>
 
-                <!-- Right side panels for requestor -->
-                <div class="space-y-6">
-                    <!-- Document Fees -->
-                    <div class="bg-white rounded-lg card-shadow p-6">
-                        <h3 class="text-lg font-semibold text-gray-800 mb-4">Document Fees</h3>
-                        <div class="space-y-3">
-                            <div class="flex justify-between items-center">
-                                <span class="text-sm text-gray-600">Baptismal Certificate</span><span
-                                    class="font-medium text-gray-800">₱ 100.00</span>
-                            </div>
-                            <div class="flex justify-between items-center">
-                                <span class="text-sm text-gray-600">Wedding Certificate</span><span
-                                    class="font-medium text-gray-800">₱ 100.00</span>
-                            </div>
-                            <div class="flex justify-between items-center">
-                                <span class="text-sm text-gray-600">Death Certificate</span><span
-                                    class="font-medium text-gray-800">₱ 100.00</span>
-                            </div>
-                            <div class="flex justify-between items-center">
-                                <span class="text-sm text-gray-600">No Marriage Certificate</span><span
-                                    class="font-medium text-gray-800">₱ 100.00</span>
-                            </div>
-                            <div class="flex justify-between items-center">
-                                <span class="text-sm text-gray-600">Attendance Certificate</span><span
-                                    class="font-medium text-gray-800">₱ 100.00</span>
-                            </div>
-                        </div>
-                    </div>
+                <!-- RIGHT ACTIONS -->
+                <div class="flex items-center gap-2 shrink-0">
+                  <button type="button"
+                          (click)="setStatus(req.id, 'ReadyForPickup')"
+                          [disabled]="req.status === 'ReadyForPickup'"
+                          class="text-[10px] px-2.5 py-1 rounded-md font-medium bg-purple-600 text-white hover:bg-purple-700 transition disabled:cursor-not-allowed"
+                          [ngClass]="req.status === 'ReadyForPickup' ? 'opacity-50' : 'opacity-100'">
+                    Ready
+                  </button>
 
-                    <!-- How it works -->
-                    <div class="bg-white rounded-lg card-shadow p-5 md:p-6">
-                        <h4 class="font-semibold text-gray-800 mb-2">How it works</h4>
-                        <ol class="list-decimal list-inside text-sm text-gray-700 space-y-1">
-                            <li>Choose a document type.</li>
-                            <li>Fill the fields shown for that type.</li>
-                            <li>Enter your email and number of copies.</li>
-                            <li>Submit your request.</li>
-                        </ol>
-                    </div>
+                  <button type="button"
+                          (click)="setStatus(req.id, 'Claimed')"
+                          [disabled]="req.status === 'Claimed'"
+                          class="text-[10px] px-2.5 py-1 rounded-md font-medium bg-purple-600 text-white hover:bg-purple-700 transition disabled:cursor-not-allowed"
+                          [ngClass]="req.status === 'Claimed' ? 'opacity-50' : 'opacity-100'">
+                    Claimed
+                  </button>
 
-                    <!-- GCash panel (only if chosen) -->
-                    <div *ngIf="showGcashDetails" class="bg-white rounded-xl shadow p-6 md:p-6 h-fit">
-                        <h3 class="text-lg font-semibold text-gray-800 mb-4">GCash Details</h3>
+                  <button type="button"
+                          (click)="setStatus(req.id, 'Rejected')"
+                          [disabled]="req.status === 'Rejected'"
+                          class="text-[10px] px-2.5 py-1 rounded-md font-medium bg-purple-600 text-white hover:bg-purple-700 transition disabled:cursor-not-allowed"
+                          [ngClass]="req.status === 'Rejected' ? 'opacity-50' : 'opacity-100'">
+                    Reject
+                  </button>
 
-                        <div class="mb-4">
-                            <p class="text-sm text-gray-600">GCash Number</p>
-                            <p class="font-semibold text-gray-900 text-lg tracking-wide">
-                                0917 123 4567
-                            </p>
-                        </div>
+                  <button type="button"
+                          (click)="editRequest(req)"
+                          class="text-purple-600 hover:text-purple-800 text-sm"
+                          title="Edit">✎</button>
 
-                        <div>
-                            <p class="text-sm text-gray-600 mb-2">Scan QR to Pay</p>
-                            <div
-                                class="w-44 h-44 md:w-52 md:h-52 border-2 border-dashed border-gray-300 rounded-md flex items-center justify-center overflow-hidden">
-                                <img src="images/gcash-qr.png" alt="GCash QR Code"
-                                    class="w-full h-full object-contain" />
-                            </div>
-                        </div>
-
-                        <div class="mt-5">
-                            <label for="referenceNumber" class="block text-sm font-medium text-gray-700 mb-1">GCash
-                                Reference Number</label>
-                            <input id="referenceNumber" name="reference_number" type="text" inputmode="numeric"
-                                pattern="[0-9]{8,20}"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-                                placeholder="Enter reference number (digits only)" />
-                            <button type="button"
-                                class="mt-3 w-full bg-purple-600 text-white py-2 rounded-md font-semibold hover:bg-purple-700 transition">
-                                Verify
-                            </button>
-                        </div>
-                    </div>
+                  
                 </div>
+              </div>
             </div>
-        </ng-template>
-    </section>
+          </div>
+
+          <ng-template #noRequestsAdmin>
+            <p class="text-sm text-gray-500">No requests yet.</p>
+          </ng-template>
+        </div>
+      </div>
+
+      <!-- CENTER: Document request form -->
+      <div class="bg-white rounded-lg card-shadow p-6">
+        <ng-container *ngTemplateOutlet="documentForm"></ng-container>
+      </div>
+
+      <!-- RIGHT: Claimed Items -->
+      <div class="space-y-6">
+        <div class="bg-white rounded-lg card-shadow p-6">
+          <button type="button"
+                  (click)="toggleClaimedItems()"
+                  class="w-full bg-purple-600 text-white py-2 rounded-md font-semibold hover:bg-purple-700 transition">
+            Claimed Items
+          </button>
+
+          <div *ngIf="showClaimedItems" class="mt-4">
+            <div class="flex items-center justify-between mb-2">
+              <h3 class="text-lg font-semibold text-gray-800">Claimed History</h3>
+              <span class="text-xs text-gray-500">Last 10</span>
+            </div>
+
+            <!-- ✅ SCROLLABLE CLAIMED LIST -->
+            <div class="max-h-[520px] overflow-y-auto pr-1 space-y-3">
+              <div *ngIf="claimedHistory.length > 0; else noClaimed">
+                <div *ngFor="let c of claimedHistory"
+                     class="border-l-4 border-blue-500 bg-blue-50 p-3 rounded-r-lg">
+                  <div class="min-w-0">
+                    <h4 class="font-medium text-gray-800 text-sm truncate">
+                      {{ getDocumentTypeLabel(c.documentType) }}
+                    </h4>
+                    <p class="text-xs text-gray-600 truncate">
+                      {{ c.firstName }} {{ c.lastName }}
+                    </p>
+                    <p class="text-xs mt-1 text-blue-600">Claimed</p>
+                  </div>
+                </div>
+              </div>
+
+              <ng-template #noClaimed>
+                <p class="text-sm text-gray-500">No claimed items yet.</p>
+              </ng-template>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= USER LAYOUT ================= -->
+    <ng-template #userDocumentsLayout>
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Form -->
+        <div class="lg:col-span-2">
+          <div class="bg-white rounded-lg card-shadow p-6">
+            <ng-container *ngTemplateOutlet="documentForm"></ng-container>
+          </div>
+        </div>
+
+        <!-- Right panels -->
+        <div class="space-y-6">
+          <!-- Fees -->
+          <div class="bg-white rounded-lg card-shadow p-6">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">Document Fees</h3>
+            <div class="space-y-3">
+              <div class="flex justify-between items-center">
+                <span class="text-sm text-gray-600">Baptismal Certificate</span>
+                <span class="font-medium text-gray-800">₱ 100.00</span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span class="text-sm text-gray-600">Wedding Certificate</span>
+                <span class="font-medium text-gray-800">₱ 100.00</span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span class="text-sm text-gray-600">Death Certificate</span>
+                <span class="font-medium text-gray-800">₱ 100.00</span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span class="text-sm text-gray-600">No Marriage Certificate</span>
+                <span class="font-medium text-gray-800">₱ 100.00</span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span class="text-sm text-gray-600">Attendance Certificate</span>
+                <span class="font-medium text-gray-800">₱ 100.00</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- How it works -->
+          <div class="bg-white rounded-lg card-shadow p-6">
+            <h4 class="font-semibold text-gray-800 mb-2">How it works</h4>
+            <ol class="list-decimal list-inside text-sm text-gray-700 space-y-1">
+              <li>Choose a document type.</li>
+              <li>Fill the fields shown for that type.</li>
+              <li>Enter your email and number of copies.</li>
+              <li>Submit your request.</li>
+            </ol>
+          </div>
+
+          <!-- GCash -->
+          <div *ngIf="showGcashDetails" class="bg-white rounded-xl shadow p-6 h-fit">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">GCash Details</h3>
+
+            <div class="mb-4">
+              <p class="text-sm text-gray-600">GCash Number</p>
+              <p class="font-semibold text-gray-900 text-lg tracking-wide">
+                0917 123 4567
+              </p>
+            </div>
+
+            <div>
+              <p class="text-sm text-gray-600 mb-2">Scan QR to Pay</p>
+              <div
+                class="w-44 h-44 md:w-52 md:h-52 border-2 border-dashed border-gray-300 rounded-md flex items-center justify-center overflow-hidden">
+                <img src="images/gcash-qr.png"
+                     alt="GCash QR Code"
+                     class="w-full h-full object-contain" />
+              </div>
+            </div>
+
+            <div class="mt-5">
+              <label for="referenceNumber"
+                     class="block text-sm font-medium text-gray-700 mb-1">
+                GCash Reference Number
+              </label>
+              <input id="referenceNumber"
+                     name="reference_number"
+                     type="text"
+                     inputmode="numeric"
+                     pattern="[0-9]{8,20}"
+                     class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                     placeholder="Enter reference number (digits only)" />
+              <button type="button"
+                      class="mt-3 w-full bg-purple-600 text-white py-2 rounded-md font-semibold hover:bg-purple-700 transition">
+                Verify
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </ng-template>
+
+  </section>
 </main>
 
 <!-- ================= SHARED DOCUMENT FORM TEMPLATE ================= -->
 <ng-template #documentForm>
-    <h3 class="text-xl font-semibold text-gray-800 mb-6">
-        Request Church Document
-    </h3>
+  <h3 class="text-xl font-semibold text-gray-800 mb-6">
+    Request Church Document
+  </h3>
 
-    <form id="documentRequestForm" [formGroup]="requestForm" (ngSubmit)="startReview()" class="space-y-4">
-        <!-- Document Type -->
-        <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Document Type</label>
-            <select formControlName="documentType" (change)="onTypeChange($event)"
-                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
-                <option value="">Select document type</option>
-                <option value="baptismal">Baptismal Certificate</option>
-                <option value="confirmation">Confirmation Certificate</option>
-                <option value="wedding">Wedding Certificate</option>
-                <option value="death">Death Certificate</option>
-            </select>
-            <div *ngIf="
-                    requestForm.get('documentType')?.touched &&
-                    requestForm.get('documentType')?.invalid
-                " class="text-red-500 text-sm mt-1">
-                Document Type is required
-            </div>
+  <form id="documentRequestForm"
+        [formGroup]="requestForm"
+        (ngSubmit)="startReview()"
+        class="space-y-4">
+
+    <!-- Document Type -->
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-2">Document Type</label>
+      <select formControlName="documentType"
+              (change)="onTypeChange($event)"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
+        <option value="">Select document type</option>
+        <option value="baptismal">Baptismal Certificate</option>
+        <option value="confirmation">Confirmation Certificate</option>
+        <option value="wedding">Wedding Certificate</option>
+        <option value="death">Death Certificate</option>
+      </select>
+      <div *ngIf="requestForm.get('documentType')?.touched && requestForm.get('documentType')?.invalid"
+           class="text-red-500 text-sm mt-1">
+        Document Type is required
+      </div>
+    </div>
+
+    <!-- Name -->
+    <div class="grid grid-cols-2 gap-4">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-2">First Name</label>
+        <input type="text"
+               formControlName="firstName"
+               class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
+        <div *ngIf="requestForm.get('firstName')?.touched && requestForm.get('firstName')?.invalid"
+             class="text-red-500 text-sm mt-1">
+          First Name is required
         </div>
-
-        <!-- Name -->
-        <div class="grid grid-cols-2 gap-4">
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">First Name</label>
-                <input type="text" formControlName="firstName"
-                    class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
-                <div *ngIf="
-                        requestForm.get('firstName')?.touched &&
-                        requestForm.get('firstName')?.invalid
-                    " class="text-red-500 text-sm mt-1">
-                    First Name is required
-                </div>
-            </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Last Name</label>
-                <input type="text" formControlName="lastName"
-                    class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
-                <div *ngIf="
-                        requestForm.get('lastName')?.touched &&
-                        requestForm.get('lastName')?.invalid
-                    " class="text-red-500 text-sm mt-1">
-                    Last Name is required
-                </div>
-            </div>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-2">Last Name</label>
+        <input type="text"
+               formControlName="lastName"
+               class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
+        <div *ngIf="requestForm.get('lastName')?.touched && requestForm.get('lastName')?.invalid"
+             class="text-red-500 text-sm mt-1">
+          Last Name is required
         </div>
+      </div>
+    </div>
 
-        <!-- Admin-only basic info -->
-        <div *ngIf="isAdmin" class="grid grid-cols-2 gap-4">
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Date of Birth</label>
-                <input type="date" formControlName="birthDate"
-                    class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
-                <div *ngIf="
-                        requestForm.get('birthDate')?.touched &&
-                        requestForm.get('birthDate')?.invalid
-                    " class="text-red-500 text-sm mt-1">
-                    Birth Date is required
-                </div>
-            </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Contact Phone</label>
-                <input type="tel" formControlName="phone"
-                    class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
-                <div *ngIf="
-                        requestForm.get('phone')?.touched &&
-                        requestForm.get('phone')?.invalid
-                    " class="text-red-500 text-sm mt-1">
-                    Contact Phone is required
-                </div>
-            </div>
+    <!-- Admin-only basic info -->
+    <div *ngIf="isAdmin" class="grid grid-cols-2 gap-4">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-2">Date of Birth</label>
+        <input type="date"
+               formControlName="birthDate"
+               class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
+        <div *ngIf="requestForm.get('birthDate')?.touched && requestForm.get('birthDate')?.invalid"
+             class="text-red-500 text-sm mt-1">
+          Birth Date is required
         </div>
+      </div>
 
-        <!-- TYPE-SPECIFIC FIELDS (same as your original) -->
-        <ng-container>
-            <!-- Baptismal / Confirmation -->
-            <div *ngIf="selectedType === 'baptismal' || selectedType === 'confirmation'"
-                class="bg-white border rounded-lg p-4 md:p-5">
-                <h4 class="font-semibold text-gray-800 mb-3">
-                    {{ selectedType === 'baptismal' ? 'Baptismal' : 'Confirmation' }} Details
-                </h4>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="md:col-span-2">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Name of the Child</label>
-                        <input type="text" formControlName="childName"
-                            class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
-                        <div *ngIf="
-                                requestForm.get('childName')?.touched &&
-                                requestForm.get('childName')?.invalid
-                            " class="text-red-500 text-sm">
-                            Child's name is required.
-                        </div>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
-                            {{
-                            selectedType === 'baptismal'
-                            ? 'Baptismal Date'
-                            : 'Confirmation Date'
-                            }}
-                        </label>
-                        <input type="date" formControlName="sacramentDate"
-                            class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
-                        <div *ngIf="
-                                requestForm.get('sacramentDate')?.touched &&
-                                requestForm.get('sacramentDate')?.invalid
-                            " class="text-red-500 text-sm">
-                            Date is required.
-                        </div>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Birthday</label>
-                        <input type="date" formControlName="birthday"
-                            class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
-                        <div *ngIf="
-                                requestForm.get('birthday')?.touched &&
-                                requestForm.get('birthday')?.invalid
-                            " class="text-red-500 text-sm">
-                            Birthday is required.
-                        </div>
-                    </div>
-                    <div class="md:col-span-2">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Purpose</label>
-                        <textarea rows="3" formControlName="naPurpose"
-                            class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500"
-                            placeholder="State your purpose for requesting this certificate"></textarea>
-                        <div *ngIf="
-                                requestForm.get('naPurpose')?.touched &&
-                                requestForm.get('naPurpose')?.invalid
-                            " class="text-red-500 text-sm">
-                            Purpose is required.
-                        </div>
-                    </div>
-                    <div class="md:col-span-2">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Contact Number</label>
-                        <input type="tel" formControlName="naContact"
-                            class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
-                        <div *ngIf="
-                                requestForm.get('naContact')?.touched &&
-                                requestForm.get('naContact')?.invalid
-                            " class="text-red-500 text-sm">
-                            <span *ngIf="requestForm.get('naContact')?.errors?.['required']">Contact number is
-                                required.</span>
-                            <span *ngIf="requestForm.get('naContact')?.errors?.['pattern']">Invalid phone format.</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Wedding -->
-            <div *ngIf="selectedType === 'wedding'" class="bg-white border rounded-lg p-4 md:p-5">
-                <h4 class="font-semibold text-gray-800 mb-3">
-                    Wedding Certificate Details
-                </h4>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Groom's Full Name</label>
-                        <input type="text" formControlName="groom"
-                            class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
-                        <div *ngIf="
-                                requestForm.get('groom')?.touched &&
-                                requestForm.get('groom')?.invalid
-                            " class="text-red-500 text-sm">
-                            Groom's name is required.
-                        </div>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Bride's Full Name</label>
-                        <input type="text" formControlName="bride"
-                            class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
-                        <div *ngIf="
-                                requestForm.get('bride')?.touched &&
-                                requestForm.get('bride')?.invalid
-                            " class="text-red-500 text-sm">
-                            Bride's name is required.
-                        </div>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Wedding Date</label>
-                        <input type="date" formControlName="weddingDate"
-                            class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
-                        <div *ngIf="
-                                requestForm.get('weddingDate')?.touched &&
-                                requestForm.get('weddingDate')?.invalid
-                            " class="text-red-500 text-sm">
-                            Wedding date is required.
-                        </div>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Place/Parish</label>
-                        <input type="text" formControlName="weddingPlace"
-                            class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
-                        <div *ngIf="
-                                requestForm.get('weddingPlace')?.touched &&
-                                requestForm.get('weddingPlace')?.invalid
-                            " class="text-red-500 text-sm">
-                            Place is required.
-                        </div>
-                    </div>
-                    <div class="md:col-span-2">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Purpose</label>
-                        <textarea rows="3" formControlName="wedPurpose"
-                            placeholder="State your purpose for requesting this certificate"
-                            class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500"></textarea>
-                        <div *ngIf="
-                                requestForm.get('wedPurpose')?.touched &&
-                                requestForm.get('wedPurpose')?.invalid
-                            " class="text-red-500 text-sm">
-                            Purpose is required.
-                        </div>
-                    </div>
-                    <div class="md:col-span-2">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Contact Number</label>
-                        <input type="tel" formControlName="wedContact"
-                            class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
-                        <div *ngIf="
-                                requestForm.get('wedContact')?.touched &&
-                                requestForm.get('wedContact')?.invalid
-                            " class="text-red-500 text-sm">
-                            <span *ngIf="requestForm.get('wedContact')?.errors?.['required']">Contact number is
-                                required.</span>
-                            <span *ngIf="requestForm.get('wedContact')?.errors?.['pattern']">Invalid phone
-                                format.</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Death -->
-            <div *ngIf="selectedType === 'death'" class="bg-white border rounded-lg p-4 md:p-5">
-                <h4 class="font-semibold text-gray-800 mb-3">
-                    Death Certificate Details
-                </h4>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="md:col-span-2">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Full Name of Deceased</label>
-                        <input type="text" formControlName="deathName"
-                            class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
-                        <div *ngIf="
-                                requestForm.get('deathName')?.touched &&
-                                requestForm.get('deathName')?.invalid
-                            " class="text-red-500 text-sm">
-                            Full name is required.
-                        </div>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Date of Death</label>
-                        <input type="date" formControlName="deathDate"
-                            class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
-                        <div *ngIf="
-                                requestForm.get('deathDate')?.touched &&
-                                requestForm.get('deathDate')?.invalid
-                            " class="text-red-500 text-sm">
-                            Date of death is required.
-                        </div>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Place of Death</label>
-                        <input type="text" formControlName="deathPlace"
-                            class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
-                        <div *ngIf="
-                                requestForm.get('deathPlace')?.touched &&
-                                requestForm.get('deathPlace')?.invalid
-                            " class="text-red-500 text-sm">
-                            Place of death is required.
-                        </div>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Relation of Requestor</label>
-                        <input type="text" formControlName="relation"
-                            class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
-                        <div *ngIf="
-                                requestForm.get('relation')?.touched &&
-                                requestForm.get('relation')?.invalid
-                            " class="text-red-500 text-sm">
-                            Relation is required.
-                        </div>
-                    </div>
-                    <div class="md:col-span-2">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Contact Number</label>
-                        <input type="tel" formControlName="deathContact"
-                            class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
-                        <div *ngIf="
-                                requestForm.get('deathContact')?.touched &&
-                                requestForm.get('deathContact')?.invalid
-                            " class="text-red-500 text-sm">
-                            <span *ngIf="requestForm.get('deathContact')?.errors?.['required']">Contact number is
-                                required.</span>
-                            <span *ngIf="requestForm.get('deathContact')?.errors?.['pattern']">Invalid phone
-                                format.</span>
-                        </div>
-                    </div>
-                    <div class="md:col-span-2">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Purpose (optional)</label>
-                        <textarea rows="3" formControlName="deathPurpose"
-                            class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500"></textarea>
-                    </div>
-                </div>
-            </div>
-        </ng-container>
-
-        <!-- Email -->
-        <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
-            <input type="email" formControlName="email"
-                class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
-            <div *ngIf="
-                    requestForm.get('email')?.touched &&
-                    requestForm.get('email')?.invalid
-                " class="text-red-500 text-sm">
-                <span *ngIf="requestForm.get('email')?.errors?.['required']">Email is required.</span>
-                <span *ngIf="requestForm.get('email')?.errors?.['email']">Invalid email format.</span>
-            </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-2">Contact Phone</label>
+        <input type="tel"
+               formControlName="phone"
+               class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
+        <div *ngIf="requestForm.get('phone')?.touched && requestForm.get('phone')?.invalid"
+             class="text-red-500 text-sm mt-1">
+          Contact Phone is required
         </div>
+      </div>
+    </div>
 
-        <!-- Purpose (admin only) -->
-        <div *ngIf="isAdmin">
-            <label class="block text-sm font-medium text-gray-700 mb-2">Purpose of Request</label>
-            <textarea rows="3" formControlName="purpose"
-                class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500"
-                placeholder="Please specify the purpose for requesting this document..."></textarea>
-            <div *ngIf="
-                    requestForm.get('purpose')?.touched &&
-                    requestForm.get('purpose')?.invalid
-                " class="text-red-500 text-sm mt-1">
-                Purpose is required
-            </div>
-        </div>
+    <!-- ✅ EMAIL (for both admin/user) -->
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+      <input type="email"
+             formControlName="email"
+             class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
+      <div *ngIf="requestForm.get('email')?.touched && requestForm.get('email')?.invalid"
+           class="text-red-500 text-sm mt-1">
+        Valid email is required
+      </div>
+    </div>
 
-        <!-- Copies -->
-        <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Number of Copies</label>
-            <select id="docCopies" formControlName="copies"
-                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-                required>
-                <option value="1">1 Copy</option>
-                <option value="2">2 Copies</option>
-                <option value="3">3 Copies</option>
-            </select>
-        </div>
+    <!-- Copies -->
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-2">Number of Copies</label>
+      <input type="number"
+             formControlName="copies"
+             min="1"
+             class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
+    </div>
 
-        <!-- Payment toggle (non-admin) -->
-        <div *ngIf="!isAdmin" class="mt-2 flex items-center justify-between">
-            <div>
-                <p class="text-sm font-medium text-gray-700">Payment Method</p>
-                <p class="text-xs text-gray-500" *ngIf="!showGcashDetails">
-                    Default: Cash payment at the parish office.
-                </p>
-                <p class="text-xs text-purple-600" *ngIf="showGcashDetails">
-                    You chose GCash / e-payment. Enter details on the right.
-                </p>
-            </div>
-            <button type="button" (click)="toggleGcash()" class="px-3 py-2 text-sm rounded-md font-medium
-               border border-purple-500 text-purple-600
-               hover:bg-purple-50 transition">
-                {{ showGcashDetails ? 'Use Cash Payment' : 'Use GCash / E-payment' }}
-            </button>
-        </div>
+    <!-- ================= TYPE-SPECIFIC FIELDS ================= -->
 
-        <!-- Buttons -->
-        <div class="flex space-x-3 mt-4">
-            <button type="submit"
-                class="flex-1 bg-purple-600 text-white py-2 px-4 rounded-md hover:bg-purple-700 transition duration-200">
-                {{ selectedRequest ? 'Review & Update Request' : 'Review & Submit Request' }}
-            </button>
-            <button type="button" (click)="clearForm()"
-                class="flex-1 bg-gray-200 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-300 transition duration-200">
-                Clear
-            </button>
-        </div>
-    </form>
+    <!-- Baptismal / Confirmation -->
+    <div *ngIf="selectedType === 'baptismal' || selectedType === 'confirmation'" class="grid grid-cols-2 gap-4">
+      <div class="col-span-2">
+        <label class="block text-sm font-medium text-gray-700 mb-2">Child Name</label>
+        <input type="text"
+               formControlName="childName"
+               class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-2">Sacrament Date</label>
+        <input type="date"
+               formControlName="sacramentDate"
+               class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-2">Birthday</label>
+        <input type="date"
+               formControlName="birthday"
+               class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
+      </div>
+
+      <div class="col-span-2">
+        <label class="block text-sm font-medium text-gray-700 mb-2">Purpose</label>
+        <input type="text"
+               formControlName="naPurpose"
+               class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
+      </div>
+
+      <div class="col-span-2">
+        <label class="block text-sm font-medium text-gray-700 mb-2">Contact Phone</label>
+        <input type="tel"
+               formControlName="naContact"
+               class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
+      </div>
+    </div>
+
+    <!-- Wedding -->
+    <div *ngIf="selectedType === 'wedding'" class="grid grid-cols-2 gap-4">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-2">Groom Name</label>
+        <input type="text"
+               formControlName="groom"
+               class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-2">Bride Name</label>
+        <input type="text"
+               formControlName="bride"
+               class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-2">Wedding Date</label>
+        <input type="date"
+               formControlName="weddingDate"
+               class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-2">Wedding Place</label>
+        <input type="text"
+               formControlName="weddingPlace"
+               class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
+      </div>
+
+      <div class="col-span-2">
+        <label class="block text-sm font-medium text-gray-700 mb-2">Purpose</label>
+        <input type="text"
+               formControlName="wedPurpose"
+               class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
+      </div>
+
+      <div class="col-span-2">
+        <label class="block text-sm font-medium text-gray-700 mb-2">Contact Phone</label>
+        <input type="tel"
+               formControlName="wedContact"
+               class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
+      </div>
+    </div>
+
+    <!-- Death -->
+    <div *ngIf="selectedType === 'death'" class="grid grid-cols-2 gap-4">
+      <div class="col-span-2">
+        <label class="block text-sm font-medium text-gray-700 mb-2">Full Name of Deceased</label>
+        <input type="text"
+               formControlName="deathName"
+               class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-2">Date of Death</label>
+        <input type="date"
+               formControlName="deathDate"
+               class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-2">Place of Death</label>
+        <input type="text"
+               formControlName="deathPlace"
+               class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
+      </div>
+
+      <div class="col-span-2">
+        <label class="block text-sm font-medium text-gray-700 mb-2">Relationship to Requestor</label>
+        <input type="text"
+               formControlName="relation"
+               class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
+      </div>
+
+      <div class="col-span-2">
+        <label class="block text-sm font-medium text-gray-700 mb-2">Contact Phone</label>
+        <input type="tel"
+               formControlName="deathContact"
+               class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
+      </div>
+
+      <div class="col-span-2">
+        <label class="block text-sm font-medium text-gray-700 mb-2">Purpose</label>
+        <input type="text"
+               formControlName="deathPurpose"
+               class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
+      </div>
+    </div>
+
+    <!-- Buttons -->
+    <div class="flex space-x-3 mt-4">
+      <button type="submit"
+              class="flex-1 bg-purple-600 text-white py-2 px-4 rounded-md hover:bg-purple-700 transition duration-200">
+        {{ selectedRequest ? 'Review & Update Request' : 'Review & Submit Request' }}
+      </button>
+
+      <button type="button"
+              (click)="clearForm()"
+              class="flex-1 bg-gray-200 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-300 transition duration-200">
+        Clear
+      </button>
+    </div>
+  </form>
 </ng-template>
 
 <!-- ================= REVIEW MODAL ================= -->
-<div *ngIf="showReviewModal && reviewData" class="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-    <div class="bg-white w-full max-w-xl rounded-xl shadow-xl">
-        <div class="px-5 py-4 border-b flex justify-between items-center">
-            <h3 class="text-lg font-bold">Review Document Request</h3>
-            <button (click)="backToEdit()" class="text-gray-500 hover:text-gray-700 text-xl leading-none">
-                ×
-            </button>
-        </div>
+<div *ngIf="showReviewModal && reviewData"
+     class="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
 
-        <div class="p-5 space-y-4">
-            <p class="text-sm text-gray-600">
-                Please review the details of your request before submitting. This will be
-                forwarded to the parish office for processing.
-            </p>
-
-            <div class="bg-gray-50 border rounded-lg p-4 space-y-3">
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                        <span class="text-xs font-semibold text-gray-500 uppercase">Document Type</span>
-                        <p class="text-sm text-gray-800">
-                            {{ reviewData.documentTypeLabel }}
-                        </p>
-                    </div>
-                    <div>
-                        <span class="text-xs font-semibold text-gray-500 uppercase">Copies</span>
-                        <p class="text-sm text-gray-800">
-                            {{ reviewData.copies || '1' }}
-                        </p>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                        <span class="text-xs font-semibold text-gray-500 uppercase">Requestor Name</span>
-                        <p class="text-sm text-gray-800">
-                            {{ reviewData.firstName }} {{ reviewData.lastName }}
-                        </p>
-                    </div>
-                    <div>
-                        <span class="text-xs font-semibold text-gray-500 uppercase">Email</span>
-                        <p class="text-sm text-gray-800">
-                            {{ reviewData.email }}
-                        </p>
-                    </div>
-                </div>
-
-                <div>
-                    <span class="text-xs font-semibold text-gray-500 uppercase">Payment Method</span>
-                    <p class="text-sm text-gray-800">
-                        {{
-                        reviewData.payViaGcash
-                        ? 'GCash / E-payment'
-                        : 'Cash at parish office'
-                        }}
-                    </p>
-                </div>
-
-                <div *ngIf="reviewData.isAdmin">
-                    <span class="text-xs font-semibold text-gray-500 uppercase">Admin Details</span>
-                    <p class="text-sm text-gray-800">
-                        DOB: {{ reviewData.birthDate || '—' }}<br />
-                        Phone: {{ reviewData.phone || '—' }}<br />
-                        Purpose: {{ reviewData.purpose || '—' }}
-                    </p>
-                </div>
-
-                <!-- Type-specific summaries -->
-                <div *ngIf="
-                        reviewData.documentType === 'baptismal' ||
-                        reviewData.documentType === 'confirmation'
-                    ">
-                    <span class="text-xs font-semibold text-gray-500 uppercase">
-                        {{
-                        reviewData.documentType === 'baptismal'
-                        ? 'Baptismal'
-                        : 'Confirmation'
-                        }}
-                        Details
-                    </span>
-                    <p class="text-sm text-gray-800">
-                        Child: {{ reviewData.childName || '—' }}<br />
-                        Date of Sacrament: {{ reviewData.sacramentDate || '—' }}<br />
-                        Birthday: {{ reviewData.birthday || '—' }}<br />
-                        Purpose: {{ reviewData.naPurpose || '—' }}<br />
-                        Contact: {{ reviewData.naContact || '—' }}
-                    </p>
-                </div>
-
-                <div *ngIf="reviewData.documentType === 'wedding'">
-                    <span class="text-xs font-semibold text-gray-500 uppercase">Wedding Details</span>
-                    <p class="text-sm text-gray-800">
-                        Groom: {{ reviewData.groom || '—' }}<br />
-                        Bride: {{ reviewData.bride || '—' }}<br />
-                        Wedding Date: {{ reviewData.weddingDate || '—' }}<br />
-                        Parish / Place: {{ reviewData.weddingPlace || '—' }}<br />
-                        Purpose: {{ reviewData.wedPurpose || '—' }}<br />
-                        Contact: {{ reviewData.wedContact || '—' }}
-                    </p>
-                </div>
-
-                <div *ngIf="reviewData.documentType === 'death'">
-                    <span class="text-xs font-semibold text-gray-500 uppercase">Death Certificate Details</span>
-                    <p class="text-sm text-gray-800">
-                        Deceased: {{ reviewData.deathName || '—' }}<br />
-                        Date of Death: {{ reviewData.deathDate || '—' }}<br />
-                        Place of Death: {{ reviewData.deathPlace || '—' }}<br />
-                        Relation: {{ reviewData.relation || '—' }}<br />
-                        Contact: {{ reviewData.deathContact || '—' }}<br />
-                        Purpose: {{ reviewData.deathPurpose || '—' }}
-                    </p>
-                </div>
-            </div>
-
-            <p class="text-xs text-gray-500">
-                If everything looks correct, click
-                <span class="font-semibold">Confirm &amp; Submit</span>. Otherwise, go
-                back and edit your information.
-            </p>
-
-            <div class="flex gap-3 pt-2">
-                <button type="button" (click)="backToEdit()"
-                    class="flex-1 bg-gray-100 text-gray-800 py-2 rounded-md hover:bg-gray-200">
-                    Back to Edit
-                </button>
-                <button type="button" (click)="confirmAndSubmit()"
-                    class="flex-1 bg-purple-600 text-white py-2 rounded-md hover:bg-purple-700">
-                    Confirm &amp; Submit
-                </button>
-            </div>
-        </div>
+  <div class="bg-white w-full max-w-xl rounded-xl shadow-xl">
+    <div class="px-5 py-4 border-b flex justify-between items-center">
+      <h3 class="text-lg font-bold">Review Document Request</h3>
+      <button (click)="backToEdit()"
+              class="text-gray-500 hover:text-gray-700 text-xl leading-none">×</button>
     </div>
+
+    <div class="p-5 space-y-3 text-sm">
+      <div class="flex justify-between">
+        <span class="text-gray-600">Document Type</span>
+        <span class="font-semibold">{{ reviewData.documentTypeLabel }}</span>
+      </div>
+
+      <div class="flex justify-between">
+        <span class="text-gray-600">Name</span>
+        <span class="font-semibold">{{ reviewData.firstName }} {{ reviewData.lastName }}</span>
+      </div>
+
+      <div class="flex justify-between">
+        <span class="text-gray-600">Email</span>
+        <span class="font-semibold">{{ reviewData.email }}</span>
+      </div>
+
+      <div class="flex justify-between">
+        <span class="text-gray-600">Copies</span>
+        <span class="font-semibold">{{ reviewData.copies }}</span>
+      </div>
+
+      <div class="pt-3 flex gap-3">
+        <button type="button"
+                (click)="backToEdit()"
+                class="flex-1 bg-gray-100 text-gray-800 py-2 rounded-md hover:bg-gray-200">
+          Back to Edit
+        </button>
+
+        <button type="button"
+                (click)="confirmAndSubmit()"
+                class="flex-1 bg-purple-600 text-white py-2 rounded-md hover:bg-purple-700">
+          Confirm &amp; Submit
+        </button>
+      </div>
+    </div>
+  </div>
 </div>

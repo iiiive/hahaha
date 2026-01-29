@@ -1,0 +1,163 @@
+/* ===== Page Wrapper ===== */
+.user-dashboard {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 18px 18px 28px;
+}
+
+/* Error */
+.error-card {
+  background: #fee2e2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+  padding: 12px 14px;
+  border-radius: 12px;
+  margin-bottom: 16px;
+  font-size: 0.9rem;
+}
+
+/* ===== Grid ===== */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+
+  @media (max-width: 1024px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ===== Card ===== */
+.card {
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(124, 58, 237, 0.14);
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(17, 24, 39, 0.06);
+  overflow: hidden;
+}
+
+/* Head */
+.card-head {
+  padding: 14px 16px 12px;
+  border-bottom: 1px solid rgba(124, 58, 237, 0.10);
+  background: linear-gradient(
+    180deg,
+    rgba(124, 58, 237, 0.10),
+    rgba(255, 255, 255, 0)
+  );
+}
+
+.card-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #111827;
+  letter-spacing: 0.2px;
+}
+
+/* Typography helpers */
+.muted {
+  color: #6b7280;
+}
+
+.small {
+  font-size: 0.82rem;
+  line-height: 1.25rem;
+}
+
+.strong {
+  font-weight: 700;
+  color: #111827;
+}
+
+/* ===== List Rows ===== */
+.list {
+  padding: 10px 12px 14px;
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(17, 24, 39, 0.06);
+  background: rgba(255, 255, 255, 0.9);
+  margin-bottom: 10px;
+
+  transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
+
+  &:hover {
+    border-color: rgba(124, 58, 237, 0.22);
+    box-shadow: 0 10px 18px rgba(17, 24, 39, 0.08);
+    transform: translateY(-1px);
+  }
+}
+
+.row:last-child {
+  margin-bottom: 0;
+}
+
+.row-left {
+  min-width: 0;
+}
+
+.row-right {
+  text-align: right;
+  flex-shrink: 0;
+}
+
+/* prevent long text from breaking layout */
+.row-left .strong,
+.row-left .muted {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 280px;
+
+  @media (max-width: 1024px) {
+    max-width: 100%;
+  }
+}
+
+/* ===== Empty State ===== */
+.empty {
+  padding: 18px 16px;
+  text-align: center;
+  font-size: 0.9rem;
+  color: #6b7280;
+}
+
+/* ===== Status Pills ===== */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  border: 1px solid rgba(124, 58, 237, 0.25);
+  background: rgba(124, 58, 237, 0.10);
+  color: #6d28d9;
+  white-space: nowrap;
+}
+
+/* special colors for document pills */
+.pill.ready {
+  border-color: rgba(22, 163, 74, 0.35);
+  background: rgba(22, 163, 74, 0.10);
+  color: #15803d;
+}
+
+.pill.claimed {
+  border-color: rgba(37, 99, 235, 0.35);
+  background: rgba(37, 99, 235, 0.10);
+  color: #1d4ed8;
+}
+
+.pill.rejected {
+  border-color: rgba(220, 38, 38, 0.35);
+  background: rgba(220, 38, 38, 0.10);
+  color: #b91c1c;
+}

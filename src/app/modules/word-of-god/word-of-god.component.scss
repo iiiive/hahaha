@@ -1,0 +1,100 @@
+/* Tabs wrapper */
+.tabs-wrap {
+  margin: 0 0 22px;
+}
+
+/* Card container */
+.tabs-card {
+  background: rgba(255, 255, 255, 0.94);
+  border-radius: 16px;
+  padding: 10px;
+  display: inline-flex;
+  gap: 8px;
+  border: 1px solid rgba(109, 40, 217, 0.15);
+  box-shadow: 0 12px 32px rgba(109, 40, 217, 0.08);
+}
+
+/* Base tab button */
+.word-tab {
+  appearance: none;
+  border: 1px solid rgba(109, 40, 217, 0.35);
+  background: linear-gradient(180deg, #ffffff, #fafafa);
+  color: #6b7280;
+  font-weight: 900;
+  font-size: 14px;
+  border-radius: 14px;
+  padding: 10px 16px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+/* Hover (inactive) */
+.word-tab:hover:not(.active) {
+  color: #6d28d9;
+  border-color: rgba(109, 40, 217, 0.7);
+  box-shadow: 0 0 0 3px rgba(109, 40, 217, 0.12);
+  transform: translateY(-1px);
+}
+
+/* Active tab (PRIMARY PURPLE) */
+.word-tab.active {
+  background: linear-gradient(90deg, #6d28d9, #7c3aed);
+  color: #ffffff;
+  border-color: transparent;
+  box-shadow: 0 10px 26px rgba(109, 40, 217, 0.35);
+}
+
+/* =======================
+   Global Button Theme
+   ======================= */
+
+/* Primary buttons */
+.btn-primary {
+  background: linear-gradient(90deg, #6d28d9, #7c3aed);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-weight: 900;
+  padding: 10px 16px;
+  box-shadow: 0 8px 20px rgba(109, 40, 217, 0.25);
+  transition: all 0.18s ease;
+}
+
+.btn-primary:hover {
+  filter: brightness(0.95);
+  transform: translateY(-1px);
+}
+
+/* Outline buttons */
+.btn-outline {
+  background: #fff;
+  border: 1px solid rgba(109, 40, 217, 0.45);
+  color: #6d28d9;
+  font-weight: 900;
+  border-radius: 12px;
+  padding: 10px 16px;
+  transition: all 0.18s ease;
+}
+
+.btn-outline:hover {
+  background: rgba(109, 40, 217, 0.08);
+  border-color: #6d28d9;
+}
+
+/* Table row actions */
+.row-actions .edit {
+  color: #6d28d9;
+  border-color: rgba(109, 40, 217, 0.5);
+}
+
+.row-actions .edit:hover {
+  background: rgba(109, 40, 217, 0.1);
+}
+
+/* Delete stays red (UX standard) */
+.row-actions .delete {
+  color: #b14bf5;
+}

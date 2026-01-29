@@ -1,0 +1,97 @@
+/* =========================================================
+   documents.component.scss (FULL)
+   ========================================================= */
+
+:host {
+  display: block;
+}
+
+/* Basic page spacing helper */
+.section {
+  width: 100%;
+}
+
+/* Card shadow used in your HTML */
+.card-shadow {
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+}
+
+/* ---------------------------------------------------------
+   Inputs / selects / buttons general smooth look
+--------------------------------------------------------- */
+input,
+select {
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+button {
+  transition: transform 0.15s ease, opacity 0.15s ease, background-color 0.15s ease;
+}
+
+button:active {
+  transform: scale(0.98);
+}
+
+/* ---------------------------------------------------------
+   SCROLLBAR (side scroll for lists)
+   Apply to the scrollable wrappers in HTML:
+   - Recent Requests wrapper: max-h + overflow-y-auto
+   - Claimed list wrapper:   max-h + overflow-y-auto
+--------------------------------------------------------- */
+
+/* Works on Firefox */
+.max-h-\[520px\] {
+  scrollbar-width: thin;
+  scrollbar-color: #a855f7 #f1f5f9; /* purple thumb, slate track */
+}
+
+/* Works on Chrome / Edge / Safari */
+.max-h-\[520px\]::-webkit-scrollbar {
+  width: 10px;
+}
+
+.max-h-\[520px\]::-webkit-scrollbar-track {
+  background: #f1f5f9; /* slate-100 */
+  border-radius: 999px;
+}
+
+.max-h-\[520px\]::-webkit-scrollbar-thumb {
+  background: #a855f7; /* purple-500 */
+  border-radius: 999px;
+  border: 2px solid #f1f5f9;
+}
+
+.max-h-\[520px\]::-webkit-scrollbar-thumb:hover {
+  background: #9333ea; /* purple-600 */
+}
+
+/* ---------------------------------------------------------
+   Optional: smoother list item look
+--------------------------------------------------------- */
+.border-l-4 {
+  transition: background-color 0.15s ease, transform 0.15s ease;
+}
+
+.border-l-4:hover {
+  transform: translateY(-1px);
+}
+
+/* ---------------------------------------------------------
+   Modal polish
+--------------------------------------------------------- */
+.fixed.inset-0 {
+  backdrop-filter: blur(2px);
+}
+
+/* ---------------------------------------------------------
+   Small responsive fixes
+--------------------------------------------------------- */
+@media (max-width: 640px) {
+  .card-shadow {
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
+  }
+
+  .max-h-\[520px\]::-webkit-scrollbar {
+    width: 8px;
+  }
+}

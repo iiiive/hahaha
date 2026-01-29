@@ -2,13 +2,13 @@
 import { Routes } from '@angular/router';
 import { LoginComponent } from './modules/auth/login/login.component';
 
-// ✅ If you already have guards, keep yours and just use them here
 import { authGuard } from './core/guards/auth.guard';
 import { adminGuard } from './core/guards/admin.guard';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
 
+  // ✅ AUTH ONLY
   {
     path: 'dashboard',
     canActivate: [authGuard],
@@ -34,6 +34,29 @@ export const routes: Routes = [
       import('./modules/scheduling/scheduling.component').then((m) => m.SchedulingComponent),
   },
 
+  {
+  path: 'register',
+  loadComponent: () =>
+    import('./modules/register/register.component')
+      .then(m => m.RegisterComponent)
+}
+,
+{
+  path: 'user/dashboard',
+  loadComponent: () =>
+    import('./modules/user-dashboard/user-dashboard.component')
+      .then(m => m.UserDashboardComponent)
+}
+,
+{
+  path: 'user-dashboard',
+  loadComponent: () =>
+    import('./modules/user-dashboard/user-dashboard.component')
+      .then(m => m.UserDashboardComponent)
+}
+,
+
+
   // ✅ USER ONLY
   {
     path: 'online-giving',
@@ -42,6 +65,14 @@ export const routes: Routes = [
       import('./modules/online-giving/online-giving.component').then(
         (m) => m.OnlineGivingComponent
       ),
+  },
+
+  // ✅ ADMIN ONLY (Create User)
+  {
+    path: 'users/create',
+    canActivate: [authGuard, adminGuard],
+    loadComponent: () =>
+      import('./modules/create-user/create-user.component').then((m) => m.CreateUserComponent),
   },
 
   // ✅ ADMIN ONLY

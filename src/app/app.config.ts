@@ -1,13 +1,18 @@
 import { ApplicationConfig } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
-import { routes } from './app.routes';
-import { tokenInterceptor } from './core/services/token.interceptor.service';
 import { provideAnimations } from '@angular/platform-browser/animations';
 import { provideToastr } from 'ngx-toastr';
 
+import { routes } from './app.routes';
+import { tokenInterceptor } from './core/services/token.interceptor.service';
+
 export const appConfig: ApplicationConfig = {
   providers: [
+    provideRouter(routes),
+
+    provideHttpClient(withInterceptors([tokenInterceptor])),
+
     provideAnimations(),
     provideToastr({
       positionClass: 'toast-top-right',
@@ -17,8 +22,5 @@ export const appConfig: ApplicationConfig = {
       easeTime: 300,
       progressBar: true,
     }),
-    provideRouter(routes),
-
-    provideHttpClient(withInterceptors([tokenInterceptor]))
-  ]
+  ],
 };

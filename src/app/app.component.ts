@@ -1,19 +1,30 @@
 import { Component } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { Router, RouterOutlet } from '@angular/router';
+import { CommonModule } from '@angular/common';
 import { HeaderComponent } from './shared/header/header.component';
 import { NavbarComponent } from './shared/navbar/navbar.component';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, HeaderComponent, NavbarComponent],
+  imports: [
+    CommonModule,        // ✅ REQUIRED for *ngIf
+    RouterOutlet,
+    HeaderComponent,
+    NavbarComponent
+  ],
   template: `
-    <app-header></app-header>
-    <app-navbar></app-navbar>
-    <router-outlet></router-outlet>`
-  // templateUrl: './app.component.html',
-  // styleUrl: './app.component.scss'
+    <!-- Hide header & navbar ONLY on login page -->
+    <app-header *ngIf="!isLoginPage()"></app-header>
+    <app-navbar *ngIf="!isLoginPage()"></app-navbar>
+
+    <router-outlet></router-outlet>
+  `
 })
 export class AppComponent {
-  title = 'apung-lourdes';
+  constructor(private router: Router) {}
+
+  isLoginPage(): boolean {
+    return this.router.url === '/login';
+  }
 }

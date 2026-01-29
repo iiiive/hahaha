@@ -1,0 +1,62 @@
+<section *ngIf="isAdmin" class="admin-users-card">
+  <div class="admin-users-header">
+    <h3>User Approvals</h3>
+
+    <div class="tabs">
+      <button type="button" class="tab tab-purple active">
+        Pending
+      </button>
+    </div>
+  </div>
+
+  <div *ngIf="loadingUsers" class="muted">Loading users...</div>
+  <div *ngIf="usersError" class="error">{{ usersError }}</div>
+
+  <table *ngIf="!loadingUsers && users.length" class="users-table">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Email</th>
+        <th>Role</th>
+        <th>Status</th>
+        <th style="width: 220px;">Actions</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      <tr *ngFor="let u of users">
+        <td>{{ u.fullName }}</td>
+        <td>{{ u.email }}</td>
+        <td>{{ roleName(u.roleId) }}</td>
+
+        <td>
+          <span class="pill pill-muted">
+            {{ u.status || 'Pending' }}
+          </span>
+        </td>
+
+        <td class="actions">
+          <button
+            class="btn btn-purple-outline"
+            type="button"
+            (click)="approve(u)"
+          >
+            Approve
+          </button>
+
+          <button
+            class="btn btn-purple-soft"
+            type="button"
+            (click)="decline(u)"
+          >
+            Decline
+          </button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div *ngIf="!loadingUsers && !users.length" class="muted">
+    No pending users.
+  </div>
+</section>

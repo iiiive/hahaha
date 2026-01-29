@@ -1,0 +1,139 @@
+.login-page {
+  position: relative;
+  min-height: 100vh;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+/* background image */
+.login-bg {
+  position: absolute;
+  inset: 0;
+  background: url('/assets/bg.jpg') center/cover no-repeat;
+  transform: scale(1.03);
+}
+
+/* dark overlay */
+.login-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.60);
+}
+
+/* card (BIGGER) */
+.login-card {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 560px;              /* ✅ bigger than 420 */
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(8px);
+  border-radius: 18px;
+  padding: 34px 34px 28px;       /* ✅ bigger padding */
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.40);
+}
+
+/* Bigger title */
+.login-title {
+  font-size: 16px;               /* ✅ bigger */
+  letter-spacing: 1.6px;
+  font-weight: 900;
+  color: #111827;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.login-subtitle {
+  margin: 10px 0 22px;
+  font-size: 14px;               /* ✅ bigger */
+  color: #6b7280;
+}
+
+/* Bigger spacing */
+.login-form {
+  display: grid;
+  gap: 18px;                     /* ✅ bigger gap */
+}
+
+.field {
+  display: grid;
+  gap: 8px;
+}
+
+.label {
+  font-size: 13px;               /* ✅ slightly bigger */
+  font-weight: 700;
+  color: #374151;
+}
+
+/* Bigger inputs */
+.input {
+  width: 100%;
+  border: 1px solid #d1d5db;
+  border-radius: 12px;
+  padding: 14px 14px;            /* ✅ bigger padding */
+  font-size: 15px;               /* ✅ bigger text */
+  outline: none;
+  background: #fff;
+  transition: 0.15s ease;
+
+  &:focus {
+    border-color: #7c3aed;
+    box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.20);
+  }
+}
+
+/* Bigger button */
+.btn-primary {
+  width: 100%;
+  border: 0;
+  border-radius: 12px;
+  padding: 14px 14px;            /* ✅ bigger height */
+  font-size: 16px;               /* ✅ bigger text */
+  font-weight: 800;
+  color: white;
+  cursor: pointer;
+  background: linear-gradient(90deg, #7c3aed, #2563eb);
+  transition: 0.15s ease;
+
+  &:hover {
+    filter: brightness(0.96);
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+.register {
+  margin-top: 8px;
+  text-align: center;
+  display: grid;
+  gap: 6px;
+}
+
+.muted {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.btn-link {
+  border: 0;
+  background: transparent;
+  color: #2563eb;
+  font-weight: 800;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 0;
+  font-size: 14px;
+}
+
+.error {
+  margin-top: 14px;
+  color: #dc2626;
+  font-size: 14px;
+  font-weight: 600;
+}

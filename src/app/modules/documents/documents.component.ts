@@ -1,10 +1,19 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  FormBuilder,
+  FormGroup,
+  FormsModule,
+  ReactiveFormsModule,
+  Validators
+} from '@angular/forms';
+import { ToastrService } from 'ngx-toastr';
+
 import { Documentrequest } from '../../shared/models/documentrequest';
 import { DocumentRequestService } from '../../core/services/document-request.service';
 import { AuthService } from '../../core/services/auth.service';
-import { ToastrService } from 'ngx-toastr';
+
+type DocStatus = 'Pending' | 'ReadyForPickup' | 'Claimed' | 'Rejected' | 'Deleted';
 
 @Component({
   selector: 'app-documents',
@@ -15,23 +24,28 @@ import { ToastrService } from 'ngx-toastr';
 })
 export class DocumentsComponent implements OnInit {
   requestForm!: FormGroup;
-  isAdmin: boolean = false;
-  selectedType: string = ''; // track document type selection
 
-  // All requests (admin only)
+  isAdmin = false;
+  selectedType = '';
+
+  // Admin: all requests
   requests: Documentrequest[] = [];
+
+  // User: own requests (from /my)
+  myRequests: Documentrequest[] = [];
+
   selectedRequest: Documentrequest | null = null;
   loading = false;
   editingId: number | null = null;
 
-  // REVIEW MODAL STATE
+  // Review modal
   showReviewModal = false;
   reviewData: any = null;
 
-  // PAYMENT TOGGLE (GCash vs Cash)
-  showGcashDetails = false; // default: cash payment
+  // Payment toggle
+  showGcashDetails = false;
 
-  // Admin filter for left-side list (similar to Scheduling)
+  // Left-side filter
   selectedDocFilter: string = 'all';
   docTypeFilters = [
     { key: 'all', label: 'All' },
@@ -40,6 +54,9 @@ export class DocumentsComponent implements OnInit {
     { key: 'wedding', label: 'Wedding' },
     { key: 'death', label: 'Death' }
   ];
+
+  // Claimed Items toggle (admin)
+  showClaimedItems = false;
 
   constructor(
     private fb: FormBuilder,
@@ -50,36 +67,43 @@ export class DocumentsComponent implements OnInit {
     this.isAdmin = this.authService.isAdmin();
   }
 
-  ngOnInit() {
+  ngOnInit(): void {
     this.initForm();
     this.loadRequests();
   }
 
-  // ---------- FORM INIT ----------
+  // ---------------- HELPERS ----------------
+  private normalizeStatus(raw: any): DocStatus {
+    const s = String(raw ?? 'Pending').trim().toLowerCase();
 
-  initForm() {
+    if (s === 'readyforpickup' || s === 'ready_for_pickup' || s === 'ready') return 'ReadyForPickup';
+    if (s === 'claimed') return 'Claimed';
+    if (s === 'rejected') return 'Rejected';
+    if (s === 'deleted') return 'Deleted';
+    return 'Pending';
+  }
+
+  // ---------------- FORM INIT ----------------
+  initForm(): void {
     this.requestForm = this.fb.group({
       documentType: ['', Validators.required],
+
       firstName: ['', this.isAdmin ? Validators.required : []],
       lastName: ['', this.isAdmin ? Validators.required : []],
       birthDate: ['', this.isAdmin ? Validators.required : []],
 
-      // Phone validation (must be 10–15 digits, allows + at start)
-      phone: ['', this.isAdmin ? [
-        Validators.required,
-        Validators.pattern(/^\+?[0-9]{10,15}$/)
-      ] : []],
+      phone: [
+        '',
+        this.isAdmin
+          ? [Validators.required, Validators.pattern(/^\+?[0-9]{10,15}$/)]
+          : []
+      ],
 
-      // Email validation
-      email: ['', [
-        Validators.required,
-        Validators.email
-      ]],
+      email: ['', [Validators.required, Validators.email]],
 
       purpose: ['', this.isAdmin ? Validators.required : []],
       copies: ['1', Validators.required],
 
-      // non-admin common fields
       // baptismal & confirmation
       childName: [''],
       sacramentDate: [''],
@@ -103,55 +127,137 @@ export class DocumentsComponent implements OnInit {
       deathContact: [''],
       deathPurpose: [''],
 
-      status: [''] // admin only
+      status: ['Pending']
     });
   }
 
-  // ---------- LOAD & FILTER REQUESTS ----------
-
-  loadRequests() {
+  // ---------------- LOAD REQUESTS ----------------
+  loadRequests(): void {
     this.loading = true;
-    this.documentService.getAll().subscribe({
-      next: data => {
-        if (this.isAdmin) {
-          this.requests = data.map((req: any) => ({
+
+    const req$ = this.isAdmin
+      ? this.documentService.getAll()
+      : this.documentService.getMy();
+
+    req$.subscribe({
+      next: (data: any[]) => {
+        const normalized = (data || []).map((req: any) => {
+          // ✅ FIX: accept status OR Status and normalize case-insensitively
+          const rawStatus = req.status ?? req.Status ?? 'Pending';
+          const status = this.normalizeStatus(rawStatus);
+
+          // normalize doc type too (optional safe)
+          const rawDocType = (req.documentType ?? req.DocumentType ?? '').toString().trim();
+
+          return {
             ...req,
-            status: req.status || 'Processing'
-          }));
+            status,
+            documentType: rawDocType || req.documentType
+          };
+        });
+
+        if (this.isAdmin) {
+          this.requests = normalized;
+        } else {
+          this.myRequests = normalized;
         }
+
         this.loading = false;
       },
-      error: err => {
+      error: (err: any) => {
         console.error('Error loading requests:', err);
+        this.toastr.error('Failed to load document requests.');
         this.loading = false;
       }
     });
   }
 
+  // ✅ ADMIN: Recent Requests EXCLUDE claimed + deleted
+  // ✅ USER: show own requests normally (including Deleted)
   get filteredRequests(): Documentrequest[] {
+  const source = this.isAdmin ? this.requests : this.myRequests;
+
+  // ✅ Admin recent list excludes Claimed + Rejected
+  // ✅ User dashboard shows everything (including Rejected)
+  let list = this.isAdmin
+    ? source.filter((r: any) => {
+        const st = (String((r.status as any) || 'Pending')).trim();
+        return st !== 'Claimed' && st !== 'Rejected';
+      })
+    : source;
+
+  if (this.selectedDocFilter === 'all') return list;
+
+  return list.filter(
+    (r: any) =>
+      String(r.documentType || r.DocumentType || '')
+        .toLowerCase()
+        .trim() === this.selectedDocFilter
+  );
+}
+
+
+  // ✅ Claimed Items: last 10 claimed (history)
+  get claimedHistory(): Documentrequest[] {
     if (!this.isAdmin) return [];
-    if (this.selectedDocFilter === 'all') return this.requests;
-    return this.requests.filter(r => r.documentType === this.selectedDocFilter);
+
+    const claimed = (this.requests || []).filter(
+      (r: any) => this.normalizeStatus(r.status ?? r.Status) === 'Claimed'
+    );
+
+    claimed.sort((a: any, b: any) => {
+      const ad = new Date(a.modifiedAt || a.ModifiedAt || a.createdAt || a.CreatedAt || 0).getTime();
+      const bd = new Date(b.modifiedAt || b.ModifiedAt || b.createdAt || b.CreatedAt || 0).getTime();
+      return bd - ad;
+    });
+
+    return claimed.slice(0, 10);
+  }
+
+  toggleClaimedItems(): void {
+    this.showClaimedItems = !this.showClaimedItems;
   }
 
   setDocFilter(key: string): void {
     this.selectedDocFilter = key;
   }
 
-  onTypeChange(event: Event) {
+  onTypeChange(event: Event): void {
     const select = event.target as HTMLSelectElement;
     this.selectedType = select.value;
     this.updateValidators();
   }
 
-  // ---------- PAYMENT TOGGLE ----------
+  // ---------------- ADMIN: UPDATE STATUS ----------------
+  setStatus(id: number, status: DocStatus): void {
+    if (!this.isAdmin) return;
 
+    const idx = this.requests.findIndex((r: any) => (r.id ?? r.Id) === id);
+    const prev = idx >= 0 ? this.normalizeStatus((this.requests[idx] as any).status ?? (this.requests[idx] as any).Status) : 'Pending';
+
+    if (idx >= 0) (this.requests[idx] as any).status = status;
+
+    this.documentService.updateStatus(id, status).subscribe({
+      next: () => {
+        this.toastr.success(`Marked as ${status}`);
+        this.loadRequests();
+      },
+      error: (err: any) => {
+        console.error('Status update failed:', err);
+        this.toastr.error('Failed to update status.');
+        if (idx >= 0) (this.requests[idx] as any).status = prev;
+      }
+    });
+  }
+
+  
+
+  // ---------------- PAYMENT TOGGLE ----------------
   toggleGcash(): void {
     this.showGcashDetails = !this.showGcashDetails;
   }
 
-  // ---------- REVIEW FLOW ----------
-
+  // ---------------- REVIEW FLOW ----------------
   startReview(): void {
     if (this.requestForm.invalid) {
       this.toastr.warning('Please fill all required fields.');
@@ -190,8 +296,7 @@ export class DocumentsComponent implements OnInit {
     }
   }
 
-  // ---------- SAVE / UPDATE ----------
-
+  // ---------------- SAVE / UPDATE ----------------
   private persistRequest(): void {
     if (this.requestForm.invalid) {
       this.toastr.warning('Form became invalid. Please check the fields.');
@@ -207,35 +312,21 @@ export class DocumentsComponent implements OnInit {
       documentType: formValue.documentType,
       contactPhone: '',
       emailAddress: formValue.email || '',
-      status: this.selectedRequest ? (formValue.status || this.selectedRequest.status) : 'Processing',
-      createdAt: this.selectedRequest ? this.selectedRequest.createdAt : nowIso,
+      status: (formValue.status || 'Pending') as any,
+      createdAt: this.selectedRequest ? (this.selectedRequest as any).createdAt : nowIso,
       modifiedAt: nowIso,
       createdBy: this.selectedRequest
-        ? this.selectedRequest.createdBy
+        ? (this.selectedRequest as any).createdBy
         : (this.isAdmin ? 'admin-user' : 'regular-user'),
-      modifiedBy: this.selectedRequest
-        ? (this.isAdmin ? 'admin-user' : 'regular-user')
-        : undefined
+      modifiedBy: this.isAdmin ? 'admin-user' : 'regular-user'
     };
 
-    if (this.isAdmin) {
-      request = {
-        ...request,
-        dateOfBirth: formValue.birthDate || '',
-        contactPhone: formValue.phone || '',
-        purposeOfRequest: formValue.purpose || '',
-        numberOfCopies: String(formValue.copies || 1)
-      };
-    }
-
-    // All: name
     request = {
       ...request,
       firstName: formValue.firstName || '',
       lastName: formValue.lastName || ''
     };
 
-    // Type-specific mapping
     switch (formValue.documentType) {
       case 'baptismal':
       case 'confirmation':
@@ -287,7 +378,7 @@ export class DocumentsComponent implements OnInit {
           this.loadRequests();
           this.clearForm();
         },
-        error: err => {
+        error: (err: any) => {
           console.error('Update failed:', err);
           this.toastr.error('Failed to update document request. Please try again.');
         }
@@ -299,7 +390,7 @@ export class DocumentsComponent implements OnInit {
           this.loadRequests();
           this.clearForm();
         },
-        error: err => {
+        error: (err: any) => {
           console.error('Create failed:', err);
           this.toastr.error('Failed to create document request. Please try again.');
         }
@@ -307,8 +398,7 @@ export class DocumentsComponent implements OnInit {
     }
   }
 
-  // ---------- DYNAMIC VALIDATION ----------
-
+  // ---------------- DYNAMIC VALIDATION ----------------
   updateValidators(): void {
     Object.keys(this.requestForm.controls).forEach(key => {
       this.requestForm.get(key)?.clearValidators();
@@ -362,7 +452,7 @@ export class DocumentsComponent implements OnInit {
         Validators.required,
         Validators.pattern(/^\+?[0-9]{10,15}$/)
       ]);
-      // Purpose optional for death cert
+      this.requestForm.get('deathPurpose')?.setValidators(Validators.required);
     }
 
     Object.keys(this.requestForm.controls).forEach(key => {
@@ -370,72 +460,60 @@ export class DocumentsComponent implements OnInit {
     });
   }
 
-  // ---------- EDIT / DELETE / CLEAR ----------
-
+  // ---------------- EDIT / CLEAR ----------------
   editRequest(req: Documentrequest): void {
     this.selectedRequest = req;
-    this.editingId = req.id;
-    this.selectedType = req.documentType;
+    this.editingId = (req as any).id ?? (req as any).Id;
+    this.selectedType = (req as any).documentType ?? (req as any).DocumentType;
 
     this.requestForm.patchValue({
-      documentType: req.documentType,
-      firstName: req.firstName || '',
-      lastName: req.lastName || '',
-      birthDate: req.dateOfBirth ? new Date(req.dateOfBirth).toISOString().substring(0, 10) : '',
-      phone: req.contactPhone || '',
-      email: req.emailAddress || '',
-      purpose: req.purposeOfRequest || '',
-      copies: req.numberOfCopies || '1',
+      documentType: (req as any).documentType ?? (req as any).DocumentType,
+      firstName: (req as any).firstName ?? (req as any).FirstName ?? '',
+      lastName: (req as any).lastName ?? (req as any).LastName ?? '',
+      birthDate: (req as any).dateOfBirth ? new Date((req as any).dateOfBirth).toISOString().substring(0, 10) : '',
+      phone: (req as any).contactPhone ?? '',
+      email: (req as any).emailAddress ?? '',
+      purpose: (req as any).purposeOfRequest ?? '',
+      copies: (req as any).numberOfCopies ?? '1',
+      status: this.normalizeStatus((req as any).status ?? (req as any).Status) as any,
 
-      childName: req.childName || '',
-      sacramentDate: req.documentDate ? new Date(req.documentDate).toISOString().substring(0, 10) : '',
-      birthday: req.dateOfBirth ? new Date(req.dateOfBirth).toISOString().substring(0, 10) : '',
-      naPurpose: req.purposeOfRequest || '',
-      naContact: req.contactPhone || '',
+      childName: (req as any).childName ?? '',
+      sacramentDate: (req as any).documentDate ? new Date((req as any).documentDate).toISOString().substring(0, 10) : '',
+      birthday: (req as any).dateOfBirth ? new Date((req as any).dateOfBirth).toISOString().substring(0, 10) : '',
+      naPurpose: (req as any).purposeOfRequest ?? '',
+      naContact: (req as any).contactPhone ?? '',
 
-      groom: req.groomsFullName || '',
-      bride: req.bridesFullName || '',
-      weddingDate: req.documentDate ? new Date(req.documentDate).toISOString().substring(0, 10) : '',
-      weddingPlace: req.address || '',
-      wedPurpose: req.purposeOfRequest || '',
-      wedContact: req.contactPhone || '',
+      groom: (req as any).groomsFullName ?? '',
+      bride: (req as any).bridesFullName ?? '',
+      weddingDate: (req as any).documentDate ? new Date((req as any).documentDate).toISOString().substring(0, 10) : '',
+      weddingPlace: (req as any).address ?? '',
+      wedPurpose: (req as any).purposeOfRequest ?? '',
+      wedContact: (req as any).contactPhone ?? '',
 
-      deathName: req.fullNameDeceased || '',
-      deathDate: req.documentDate ? new Date(req.documentDate).toISOString().substring(0, 10) : '',
-      deathPlace: req.address || '',
-      relation: req.relationRequestor || '',
-      deathContact: req.contactPhone || '',
-      deathPurpose: req.purposeOfRequest || ''
+      deathName: (req as any).fullNameDeceased ?? '',
+      deathDate: (req as any).documentDate ? new Date((req as any).documentDate).toISOString().substring(0, 10) : '',
+      deathPlace: (req as any).address ?? '',
+      relation: (req as any).relationRequestor ?? '',
+      deathContact: (req as any).contactPhone ?? '',
+      deathPurpose: (req as any).purposeOfRequest ?? ''
     });
 
     this.updateValidators();
   }
 
-  deleteRequest(id: number): void {
-    if (confirm('Are you sure you want to delete this request?')) {
-      this.documentService.delete(id).subscribe({
-        next: () => {
-          this.toastr.success('Request deleted successfully.');
-          this.loadRequests();
-        },
-        error: err => {
-          console.error('Delete failed:', err);
-          this.toastr.error('Failed to delete request.');
-        }
-      });
-    }
-  }
-
   clearForm(): void {
     this.requestForm.reset({
       copies: 1,
-      status: 'Processing'
+      status: 'Pending'
     });
+
     this.selectedRequest = null;
     this.editingId = null;
     this.selectedType = '';
     this.showReviewModal = false;
     this.reviewData = null;
     this.showGcashDetails = false;
+
+    this.selectedDocFilter = 'all';
   }
 }
