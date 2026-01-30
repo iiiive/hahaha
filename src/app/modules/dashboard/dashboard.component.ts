@@ -18,9 +18,10 @@ export class DashboardComponent implements OnInit {
     weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
   });
 
-  isAdmin: boolean = false;
+  role: 'User' | 'Admin' | 'SuperAdmin' | '' = '';
+  isSuperAdmin = false;
 
-  // ✅ pending users only
+  // ✅ pending users only (SuperAdmin dashboard only)
   users: AdminUserRow[] = [];
   loadingUsers = false;
   usersError = '';
@@ -28,12 +29,14 @@ export class DashboardComponent implements OnInit {
   constructor(
     private authService: AuthService,
     private adminUserService: AdminUserService
-  ) {
-    this.isAdmin = this.authService.isAdmin();
-  }
+  ) {}
 
   ngOnInit(): void {
-    if (this.isAdmin) this.loadPending();
+    this.role = this.authService.getNormalizedRole();
+    this.isSuperAdmin = this.authService.isSuperAdmin();
+
+    // ✅ Only SuperAdmin sees dashboard widgets like approvals
+    if (this.isSuperAdmin) this.loadPending();
   }
 
   loadPending() {
@@ -54,7 +57,6 @@ export class DashboardComponent implements OnInit {
   approve(u: AdminUserRow) {
     this.adminUserService.approve(u.userId).subscribe({
       next: () => {
-        // ✅ remove from pending immediately
         this.users = this.users.filter(x => x.userId !== u.userId);
       },
       error: (err) => {
@@ -67,7 +69,6 @@ export class DashboardComponent implements OnInit {
   decline(u: AdminUserRow) {
     this.adminUserService.decline(u.userId).subscribe({
       next: () => {
-        // ✅ remove from pending immediately
         this.users = this.users.filter(x => x.userId !== u.userId);
       },
       error: (err) => {
@@ -78,6 +79,8 @@ export class DashboardComponent implements OnInit {
   }
 
   roleName(roleId: number) {
-    return roleId === 1 ? 'Admin' : 'User';
+    if (roleId === 1) return 'Admin';
+    if (roleId === 3) return 'SuperAdmin';
+    return 'User';
   }
 }

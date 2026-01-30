@@ -3,6 +3,8 @@ import { ApiService } from './api.service';
 import { BehaviorSubject, tap } from 'rxjs';
 import { Router } from '@angular/router';
 
+type AppRole = 'User' | 'Admin' | 'SuperAdmin' | '';
+
 @Injectable({
   providedIn: 'root'
 })
@@ -13,35 +15,35 @@ export class AuthService {
   private loggedInSubject = new BehaviorSubject<boolean>(this.isAuthenticated());
   loggedIn$ = this.loggedInSubject.asObservable();
 
-  // ✅ admin detection resilient (case-insensitive)
-  private isAdminSubject = new BehaviorSubject<boolean>(this.isRoleAdmin(this.getRole()));
+  // ✅ Admin access = Admin OR SuperAdmin
+  private isAdminSubject = new BehaviorSubject<boolean>(this.isAdminAccessRole(this.getRole()));
   isAdmin$ = this.isAdminSubject.asObservable();
 
   constructor(private api: ApiService, private router: Router) {
-    // ✅ On refresh: if token exists but role missing, derive role from token
+    // ✅ On refresh: always re-derive role from token (prevents stale localStorage role)
     const token = this.getToken();
-    if (token && !this.getRole()) {
-      const role = this.extractRoleFromToken(token);
-      if (role) {
-        localStorage.setItem(this.roleKey, role);
-        this.isAdminSubject.next(this.isRoleAdmin(role));
+    if (token) {
+      const derived = this.deriveRoleFromToken(token);
+      if (derived) {
+        localStorage.setItem(this.roleKey, derived);
+        this.isAdminSubject.next(this.isAdminAccessRole(derived));
       }
     }
   }
 
   login(credentials: { email: string; password: string }) {
-    // ✅ Match Swagger route: /api/Auth/login
     return this.api.post<any>('Auth/login', credentials).pipe(
       tap(res => {
         if (res?.token) {
           localStorage.setItem(this.tokenKey, res.token);
 
-          const role = this.extractRoleFromToken(res.token);
-          if (role) localStorage.setItem(this.roleKey, role);
+          // ✅ Always derive role from the token returned by server
+          const derived = this.deriveRoleFromToken(res.token);
+          if (derived) localStorage.setItem(this.roleKey, derived);
           else localStorage.removeItem(this.roleKey);
 
           this.loggedInSubject.next(true);
-          this.isAdminSubject.next(this.isRoleAdmin(role));
+          this.isAdminSubject.next(this.isAdminAccessRole(derived));
         }
       })
     );
@@ -54,8 +56,7 @@ export class AuthService {
     this.loggedInSubject.next(false);
     this.isAdminSubject.next(false);
 
-    // ✅ FIX: go back to first page immediately (no refresh needed)
-    this.router.navigateByUrl('/login'); // change to '/' if your first page is home
+    this.router.navigateByUrl('/login');
   }
 
   getToken() {
@@ -70,28 +71,77 @@ export class AuthService {
     return !!this.getToken();
   }
 
+  /** ✅ Admin pages access (Admin OR SuperAdmin) */
   isAdmin(): boolean {
-    return this.isRoleAdmin(this.getRole());
+    return this.isAdminAccessRole(this.getNormalizedRole());
+  }
+
+  /** ✅ SuperAdmin-only checks */
+  isSuperAdmin(): boolean {
+    return this.getNormalizedRole() === 'SuperAdmin';
+  }
+
+  /** ✅ Always return reliable role based on token first (not stale localStorage) */
+  getNormalizedRole(): AppRole {
+    const token = this.getToken();
+    if (token) {
+      const derived = this.normalizeRoleString(this.deriveRoleFromToken(token));
+      if (derived) {
+        // keep storage synced (optional but helps)
+        localStorage.setItem(this.roleKey, derived);
+        return derived;
+      }
+    }
+
+    // fallback to localStorage if no token
+    return this.normalizeRoleString(this.getRole());
   }
 
   // ----------------- helpers -----------------
 
-  private isRoleAdmin(role: string | null | undefined): boolean {
-    return (role || '').toLowerCase() === 'admin';
+  private isAdminAccessRole(role: string | null | undefined): boolean {
+    const r = (role || '').trim().toLowerCase();
+    return r === 'admin' || r === 'superadmin';
   }
 
-  private extractRoleFromToken(token: string): string | null {
+  private normalizeRoleString(role: string | null | undefined): AppRole {
+    const r = (role || '').trim().toLowerCase();
+
+    if (r === 'superadmin' || r === 'super admin' || r === 'super_admin') return 'SuperAdmin';
+    if (r === 'admin') return 'Admin';
+    if (r === 'user') return 'User';
+
+    return '';
+  }
+
+  /**
+   * ✅ Strong role derivation:
+   * 1) try role claim keys
+   * 2) if missing/incorrect, map roleId (1/2/3)
+   */
+  private deriveRoleFromToken(token: string): string | null {
     try {
       const payload = this.decodeJwtPayload(token);
       if (!payload) return null;
 
-      // ✅ support different role claim keys
-      const role =
+      const roleClaim =
         payload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] ??
         payload['role'] ??
         payload['Role'];
 
-      return typeof role === 'string' ? role : null;
+      if (typeof roleClaim === 'string' && roleClaim.trim()) {
+        return roleClaim;
+      }
+
+      // ✅ fallback: roleId mapping
+      const roleId = payload['roleId'];
+      const id = typeof roleId === 'string' ? parseInt(roleId, 10) : roleId;
+
+      if (id === 3) return 'SuperAdmin';
+      if (id === 1) return 'Admin';
+      if (id === 2) return 'User';
+
+      return null;
     } catch {
       return null;
     }
@@ -101,7 +151,6 @@ export class AuthService {
     const parts = token.split('.');
     if (parts.length < 2) return null;
 
-    // JWT payload is base64url
     const base64Url = parts[1];
     const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
     const padded = base64.padEnd(base64.length + (4 - (base64.length % 4)) % 4, '=');

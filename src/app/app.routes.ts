@@ -34,30 +34,32 @@ export const routes: Routes = [
       import('./modules/scheduling/scheduling.component').then((m) => m.SchedulingComponent),
   },
 
+  // ✅ PUBLIC REGISTER
   {
-  path: 'register',
-  loadComponent: () =>
-    import('./modules/register/register.component')
-      .then(m => m.RegisterComponent)
-}
-,
-{
-  path: 'user/dashboard',
-  loadComponent: () =>
-    import('./modules/user-dashboard/user-dashboard.component')
-      .then(m => m.UserDashboardComponent)
-}
-,
-{
-  path: 'user-dashboard',
-  loadComponent: () =>
-    import('./modules/user-dashboard/user-dashboard.component')
-      .then(m => m.UserDashboardComponent)
-}
-,
+    path: 'register',
+    loadComponent: () =>
+      import('./modules/register/register.component').then((m) => m.RegisterComponent),
+  },
 
+  // ✅ USER DASHBOARD (AUTH REQUIRED)  <-- FIXED
+  {
+    path: 'user/dashboard',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./modules/user-dashboard/user-dashboard.component').then(
+        (m) => m.UserDashboardComponent
+      ),
+  },
+  {
+    path: 'user-dashboard',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./modules/user-dashboard/user-dashboard.component').then(
+        (m) => m.UserDashboardComponent
+      ),
+  },
 
-  // ✅ USER ONLY
+  // ✅ USER ONLY (still just auth, your app controls UI by role)
   {
     path: 'online-giving',
     canActivate: [authGuard],
@@ -67,15 +69,13 @@ export const routes: Routes = [
       ),
   },
 
-  // ✅ ADMIN ONLY (Create User)
+  // ✅ ADMIN ONLY (Admin + SuperAdmin via adminGuard)
   {
     path: 'users/create',
     canActivate: [authGuard, adminGuard],
     loadComponent: () =>
       import('./modules/create-user/create-user.component').then((m) => m.CreateUserComponent),
   },
-
-  // ✅ ADMIN ONLY
   {
     path: 'donations',
     canActivate: [authGuard, adminGuard],

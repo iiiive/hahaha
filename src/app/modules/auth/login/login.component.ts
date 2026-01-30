@@ -35,17 +35,16 @@ export class LoginComponent {
     this.showModal = false;
   }
 
-  // ✅ NEW: navigate to Register page
- goToRegister() {
-  this.loginMessage = '';
-  this.showModal = false;
+  // ✅ navigate to Register page
+  goToRegister() {
+    this.loginMessage = '';
+    this.showModal = false;
 
-  // let Angular render/hide the modal first, then navigate
-  Promise.resolve().then(() => {
-    this.router.navigate(['/register']);
-  });
-}
-
+    // let Angular render/hide the modal first, then navigate
+    Promise.resolve().then(() => {
+      this.router.navigate(['/register']);
+    });
+  }
 
   onSubmit() {
     if (this.loginForm.invalid) {
@@ -66,8 +65,17 @@ export class LoginComponent {
           this.loginMessage = 'Login successful!';
           this.showModal = false;
 
+          // ✅ Role-based redirect:
+          // Admin + SuperAdmin -> /dashboard
+          // User -> /user-dashboard
+          const role = this.authService.getNormalizedRole();
+
           setTimeout(() => {
-            this.router.navigate(['/dashboard']);
+            if (role === 'Admin' || role === 'SuperAdmin') {
+              this.router.navigateByUrl('/dashboard');
+            } else {
+              this.router.navigateByUrl('/user-dashboard');
+            }
           }, 0);
         },
         error: (err) => {
@@ -77,7 +85,7 @@ export class LoginComponent {
           if (err?.status === 401) {
             msg = err?.error?.message || 'Wrong email or password.';
           }
-          // 403 = not approved / forbidden
+          // 403 = declined / forbidden
           else if (err?.status === 403) {
             msg = err?.error?.message || 'Your account is not approved yet.';
           }

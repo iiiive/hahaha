@@ -1,4 +1,5 @@
-<section *ngIf="isAdmin" class="admin-users-card">
+<!-- ✅ SUPERADMIN ONLY dashboard widgets -->
+<section *ngIf="isSuperAdmin" class="admin-users-card">
   <div class="admin-users-header">
     <h3>User Approvals</h3>
 
@@ -60,3 +61,6 @@
     No pending users.
   </div>
 </section>
+
+<!-- ✅ ADMIN DASHBOARD = intentionally empty -->
+<!-- (no section needed; admin will simply see a blank dashboard) -->

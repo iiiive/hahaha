@@ -47,17 +47,15 @@ export class RegisterComponent {
         email: ['', [Validators.required, Validators.email, Validators.maxLength(150)]],
         password: ['', [Validators.required, Validators.minLength(6), Validators.maxLength(100)]],
         confirmPassword: ['', [Validators.required]],
-        // ✅ keep roleId in UI if you want, but DO NOT send to backend unless backend supports it
-        roleId: [2],
+        roleId: [2], // 2=User (default), 1=Admin
       },
       { validators: passwordMatchValidator }
     );
   }
 
-
   goBack() {
-  this.router.navigate(['/login']);
-}
+    this.router.navigate(['/login']);
+  }
 
   get f() {
     return this.form.controls;
@@ -70,22 +68,24 @@ export class RegisterComponent {
   submit() {
     if (this.loading) return;
 
-    // ✅ stop if invalid/mismatch
     if (this.form.invalid || this.form.hasError('passwordMismatch')) {
       this.form.markAllAsTouched();
       return;
     }
 
+    // ✅ IMPORTANT FIX: include roleId in payload
+    const roleIdRaw = this.f['roleId'].value;
+    const roleId = Number(roleIdRaw);
+
     const payload = {
       fullName: String(this.f['fullName'].value || '').trim(),
-      // ✅ normalize email to avoid duplicates like A@B.com vs a@b.com
       email: String(this.f['email'].value || '').trim().toLowerCase(),
       password: String(this.f['password'].value || ''),
+      roleId: roleId === 1 ? 1 : 2, // ✅ only allow 1 or 2 from UI
     };
 
     this.loading = true;
 
-    // ✅ should become https://localhost:7006/api/Auth/register (depends on ApiService base URL)
     this.api
       .post<any>('Auth/register', payload)
       .pipe(finalize(() => (this.loading = false)))
@@ -95,19 +95,19 @@ export class RegisterComponent {
           this.router.navigate(['/login']);
         },
         error: (err) => {
-          // ✅ better error handling
           const status = err?.status;
 
           if (status === 409) {
-            // backend says conflict (email exists)
-            this.toastr.error('Email already exists. If your previous account was declined, ask admin to reset it or we need backend to allow re-register.');
+            this.toastr.error(
+              'Email already exists. If your previous account was declined, ask admin to reset it or allow re-register.'
+            );
             return;
           }
 
           if (status === 400) {
             this.toastr.error(err?.error?.message || 'Invalid registration input.');
             return;
-          }
+          } 
 
           if (status === 403) {
             this.toastr.error(err?.error?.message || 'Registration not allowed.');
