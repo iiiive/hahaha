@@ -64,11 +64,23 @@ export class DocumentsComponent implements OnInit {
     private authService: AuthService,
     private toastr: ToastrService
   ) {
+    // ✅ keep your existing behavior
     this.isAdmin = this.authService.isAdmin();
   }
 
   ngOnInit(): void {
     this.initForm();
+
+    // ✅ IMPORTANT: always keep validators synced to documentType
+    this.requestForm.get('documentType')?.valueChanges.subscribe((v) => {
+      this.selectedType = (v || '').toString();
+      this.updateValidators();
+    });
+
+    // ✅ run once at start
+    this.selectedType = (this.requestForm.get('documentType')?.value || '').toString();
+    this.updateValidators();
+
     this.loadRequests();
   }
 
@@ -88,20 +100,16 @@ export class DocumentsComponent implements OnInit {
     this.requestForm = this.fb.group({
       documentType: ['', Validators.required],
 
-      firstName: ['', this.isAdmin ? Validators.required : []],
-      lastName: ['', this.isAdmin ? Validators.required : []],
-      birthDate: ['', this.isAdmin ? Validators.required : []],
-
-      phone: [
-        '',
-        this.isAdmin
-          ? [Validators.required, Validators.pattern(/^\+?[0-9]{10,15}$/)]
-          : []
-      ],
+      firstName: [''],
+      lastName: [''],
+      birthDate: [''],
+      phone: [''],
 
       email: ['', [Validators.required, Validators.email]],
 
-      purpose: ['', this.isAdmin ? Validators.required : []],
+      // ✅ IMPORTANT: DO NOT make this required (you don't have an input for it in HTML)
+      purpose: [''],
+
       copies: ['1', Validators.required],
 
       // baptismal & confirmation
@@ -142,11 +150,9 @@ export class DocumentsComponent implements OnInit {
     req$.subscribe({
       next: (data: any[]) => {
         const normalized = (data || []).map((req: any) => {
-          // ✅ FIX: accept status OR Status and normalize case-insensitively
           const rawStatus = req.status ?? req.Status ?? 'Pending';
           const status = this.normalizeStatus(rawStatus);
 
-          // normalize doc type too (optional safe)
           const rawDocType = (req.documentType ?? req.DocumentType ?? '').toString().trim();
 
           return {
@@ -156,11 +162,8 @@ export class DocumentsComponent implements OnInit {
           };
         });
 
-        if (this.isAdmin) {
-          this.requests = normalized;
-        } else {
-          this.myRequests = normalized;
-        }
+        if (this.isAdmin) this.requests = normalized;
+        else this.myRequests = normalized;
 
         this.loading = false;
       },
@@ -172,32 +175,29 @@ export class DocumentsComponent implements OnInit {
     });
   }
 
-  // ✅ ADMIN: Recent Requests EXCLUDE claimed + deleted
-  // ✅ USER: show own requests normally (including Deleted)
+  // ✅ ADMIN: Recent Requests EXCLUDE claimed + rejected
+  // ✅ USER: show own requests normally
   get filteredRequests(): Documentrequest[] {
-  const source = this.isAdmin ? this.requests : this.myRequests;
+    const source = this.isAdmin ? this.requests : this.myRequests;
 
-  // ✅ Admin recent list excludes Claimed + Rejected
-  // ✅ User dashboard shows everything (including Rejected)
-  let list = this.isAdmin
-    ? source.filter((r: any) => {
-        const st = (String((r.status as any) || 'Pending')).trim();
-        return st !== 'Claimed' && st !== 'Rejected';
-      })
-    : source;
+    let list = this.isAdmin
+      ? source.filter((r: any) => {
+          const st = String((r.status as any) || 'Pending').trim();
+          return st !== 'Claimed' && st !== 'Rejected';
+        })
+      : source;
 
-  if (this.selectedDocFilter === 'all') return list;
+    if (this.selectedDocFilter === 'all') return list;
 
-  return list.filter(
-    (r: any) =>
-      String(r.documentType || r.DocumentType || '')
-        .toLowerCase()
-        .trim() === this.selectedDocFilter
-  );
-}
+    return list.filter(
+      (r: any) =>
+        String(r.documentType || r.DocumentType || '')
+          .toLowerCase()
+          .trim() === this.selectedDocFilter
+    );
+  }
 
-
-  // ✅ Claimed Items: last 10 claimed (history)
+  // ✅ Claimed Items: last 10 claimed
   get claimedHistory(): Documentrequest[] {
     if (!this.isAdmin) return [];
 
@@ -222,6 +222,7 @@ export class DocumentsComponent implements OnInit {
     this.selectedDocFilter = key;
   }
 
+  // you can keep this since your HTML calls it
   onTypeChange(event: Event): void {
     const select = event.target as HTMLSelectElement;
     this.selectedType = select.value;
@@ -233,7 +234,10 @@ export class DocumentsComponent implements OnInit {
     if (!this.isAdmin) return;
 
     const idx = this.requests.findIndex((r: any) => (r.id ?? r.Id) === id);
-    const prev = idx >= 0 ? this.normalizeStatus((this.requests[idx] as any).status ?? (this.requests[idx] as any).Status) : 'Pending';
+    const prev =
+      idx >= 0
+        ? this.normalizeStatus((this.requests[idx] as any).status ?? (this.requests[idx] as any).Status)
+        : 'Pending';
 
     if (idx >= 0) (this.requests[idx] as any).status = status;
 
@@ -250,15 +254,14 @@ export class DocumentsComponent implements OnInit {
     });
   }
 
-  
-
-  // ---------------- PAYMENT TOGGLE ----------------
-  toggleGcash(): void {
-    this.showGcashDetails = !this.showGcashDetails;
-  }
-
   // ---------------- REVIEW FLOW ----------------
   startReview(): void {
+    // ✅ helpful debug (optional)
+    // console.log('INVALID CONTROLS:',
+    //   Object.keys(this.requestForm.controls).filter(k => this.requestForm.get(k)?.invalid),
+    //   this.requestForm.value
+    // );
+
     if (this.requestForm.invalid) {
       this.toastr.warning('Please fill all required fields.');
       this.requestForm.markAllAsTouched();
@@ -400,26 +403,34 @@ export class DocumentsComponent implements OnInit {
 
   // ---------------- DYNAMIC VALIDATION ----------------
   updateValidators(): void {
-    Object.keys(this.requestForm.controls).forEach(key => {
+    // clear everything first
+    Object.keys(this.requestForm.controls).forEach((key) => {
       this.requestForm.get(key)?.clearValidators();
       this.requestForm.get(key)?.updateValueAndValidity({ emitEvent: false });
     });
 
-    this.requestForm.get('firstName')?.setValidators(Validators.required);
-    this.requestForm.get('lastName')?.setValidators(Validators.required);
+    // always required
     this.requestForm.get('documentType')?.setValidators(Validators.required);
     this.requestForm.get('email')?.setValidators([Validators.required, Validators.email]);
+    this.requestForm.get('copies')?.setValidators([Validators.required]);
 
+    // ✅ For admin: these base fields are required
     if (this.isAdmin) {
+      this.requestForm.get('firstName')?.setValidators(Validators.required);
+      this.requestForm.get('lastName')?.setValidators(Validators.required);
       this.requestForm.get('birthDate')?.setValidators(Validators.required);
       this.requestForm.get('phone')?.setValidators([
         Validators.required,
         Validators.pattern(/^\+?[0-9]{10,15}$/)
       ]);
-      this.requestForm.get('purpose')?.setValidators(Validators.required);
-      this.requestForm.get('copies')?.setValidators(Validators.required);
+
+      // ✅ IMPORTANT FIX:
+      // DO NOT REQUIRE "purpose" because there is NO input bound to formControlName="purpose"
+      // and you already have naPurpose/wedPurpose/deathPurpose.
+      // this.requestForm.get('purpose')?.setValidators(Validators.required);  ❌ removed
     }
 
+    // type-specific required fields
     if (this.selectedType === 'baptismal' || this.selectedType === 'confirmation') {
       this.requestForm.get('childName')?.setValidators(Validators.required);
       this.requestForm.get('sacramentDate')?.setValidators(Validators.required);
@@ -455,8 +466,9 @@ export class DocumentsComponent implements OnInit {
       this.requestForm.get('deathPurpose')?.setValidators(Validators.required);
     }
 
-    Object.keys(this.requestForm.controls).forEach(key => {
-      this.requestForm.get(key)?.updateValueAndValidity();
+    // apply changes
+    Object.keys(this.requestForm.controls).forEach((key) => {
+      this.requestForm.get(key)?.updateValueAndValidity({ emitEvent: false });
     });
   }
 
@@ -470,7 +482,9 @@ export class DocumentsComponent implements OnInit {
       documentType: (req as any).documentType ?? (req as any).DocumentType,
       firstName: (req as any).firstName ?? (req as any).FirstName ?? '',
       lastName: (req as any).lastName ?? (req as any).LastName ?? '',
-      birthDate: (req as any).dateOfBirth ? new Date((req as any).dateOfBirth).toISOString().substring(0, 10) : '',
+      birthDate: (req as any).dateOfBirth
+        ? new Date((req as any).dateOfBirth).toISOString().substring(0, 10)
+        : '',
       phone: (req as any).contactPhone ?? '',
       email: (req as any).emailAddress ?? '',
       purpose: (req as any).purposeOfRequest ?? '',
@@ -478,20 +492,28 @@ export class DocumentsComponent implements OnInit {
       status: this.normalizeStatus((req as any).status ?? (req as any).Status) as any,
 
       childName: (req as any).childName ?? '',
-      sacramentDate: (req as any).documentDate ? new Date((req as any).documentDate).toISOString().substring(0, 10) : '',
-      birthday: (req as any).dateOfBirth ? new Date((req as any).dateOfBirth).toISOString().substring(0, 10) : '',
+      sacramentDate: (req as any).documentDate
+        ? new Date((req as any).documentDate).toISOString().substring(0, 10)
+        : '',
+      birthday: (req as any).dateOfBirth
+        ? new Date((req as any).dateOfBirth).toISOString().substring(0, 10)
+        : '',
       naPurpose: (req as any).purposeOfRequest ?? '',
       naContact: (req as any).contactPhone ?? '',
 
       groom: (req as any).groomsFullName ?? '',
       bride: (req as any).bridesFullName ?? '',
-      weddingDate: (req as any).documentDate ? new Date((req as any).documentDate).toISOString().substring(0, 10) : '',
+      weddingDate: (req as any).documentDate
+        ? new Date((req as any).documentDate).toISOString().substring(0, 10)
+        : '',
       weddingPlace: (req as any).address ?? '',
       wedPurpose: (req as any).purposeOfRequest ?? '',
       wedContact: (req as any).contactPhone ?? '',
 
       deathName: (req as any).fullNameDeceased ?? '',
-      deathDate: (req as any).documentDate ? new Date((req as any).documentDate).toISOString().substring(0, 10) : '',
+      deathDate: (req as any).documentDate
+        ? new Date((req as any).documentDate).toISOString().substring(0, 10)
+        : '',
       deathPlace: (req as any).address ?? '',
       relation: (req as any).relationRequestor ?? '',
       deathContact: (req as any).contactPhone ?? '',
@@ -515,5 +537,7 @@ export class DocumentsComponent implements OnInit {
     this.showGcashDetails = false;
 
     this.selectedDocFilter = 'all';
+
+    this.updateValidators();
   }
 }

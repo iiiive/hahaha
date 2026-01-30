@@ -184,7 +184,8 @@ export class SchedulingComponent implements OnInit {
   private persistSchedule() {
     const formValue = this.schedulingForm.value;
 
-    const baseStatus: ScheduleStatus = this.isAdmin ? 'Approved' : 'Pending';
+    const baseStatus: ScheduleStatus = 'Pending';
+
 
     const schedule: ServiceSchedule = {
       id: this.editingId ?? 0,
