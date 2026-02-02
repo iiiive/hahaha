@@ -9,7 +9,7 @@ import { CreateDonationDto } from '../../shared/models/create-donation.dto';
 export class DonationService {
   private baseUrl = `${environment.apiUrl}/Donation`;
 
-  constructor(private http: HttpClient) { }
+  constructor(private http: HttpClient) {}
 
   getAll(): Observable<Donation[]> {
     return this.http.get<Donation[]>(this.baseUrl);
@@ -19,13 +19,13 @@ export class DonationService {
     return this.http.get<Donation>(`${this.baseUrl}/${id}`);
   }
 
-  // ✅ Create uses DTO (not full Donation)
   create(dto: CreateDonationDto): Observable<Donation> {
     return this.http.post<Donation>(this.baseUrl, dto);
   }
 
-  update(id: number, donation: Donation): Observable<Donation> {
-    return this.http.put<Donation>(`${this.baseUrl}/${id}`, donation);
+  // ✅ FIX: allow partial payloads (amount, remarks only)
+  update(id: number, payload: Partial<Donation>): Observable<Donation> {
+    return this.http.put<Donation>(`${this.baseUrl}/${id}`, payload);
   }
 
   delete(id: number): Observable<void> {

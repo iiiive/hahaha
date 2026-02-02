@@ -1,9 +1,12 @@
 export interface CreateDonationDto {
-    amount: number;
-    donationType: string;
-    referenceNo: string | null;
-    remarks: string | null;
+  amount: number;
 
-    // ✅ NEW: chosen date saved to donation_date (YYYY-MM-DD)
-    donationDate?: string | null;
+  // Offering / Kapaldanan / KAPASALAMATAN / Other
+  donationType: string;
+
+  // only when donationType == "Other"
+  customDonationType?: string | null;
+
+  referenceNo?: string | null;
+  remarks?: string | null;
 }

@@ -1,17 +1,22 @@
 export interface Donation {
-    donationId: number;
-    userId?: number | null;
-    amount: number;
-    donationType: string;
-    referenceNo?: string | null;
-    remarks?: string | null;
+  donationId: number;
+  userId?: number | null;
 
-    // ✅ NEW: from donations.donation_date
-    donationDate?: string | null;
+  amount: number;
 
-    donorName?: string;
-    paymentMethod?: string | null;
-    status?: string | null;
+  donationType: string;
 
-    createdAt: string; // timestamp
+  // ✅ exists in your DB: CustomDonationType
+  customDonationType?: string | null;
+
+  referenceNo?: string | null;
+  remarks?: string | null;
+
+  // ✅ ADD THIS (because backend DTO includes DonationDate)
+  donationDate?: string | null;
+
+  createdAt: string;
+  modifiedAt?: string | null;
+  createdBy?: number | null;
+  modifiedBy?: number | null;
 }
