@@ -1,5 +1,4 @@
 <main class="max-w-6xl mx-auto px-4 md:px-6 lg:px-8 py-8">
-  <!-- Documents -->
   <section id="Documents" class="section">
     <h2 class="text-4xl font-bold text-gray-800 mb-8" [ngClass]="isAdmin ? '' : 'text-center'">
       Church Documents Management
@@ -13,7 +12,7 @@
       <div class="bg-white rounded-lg card-shadow p-6">
         <h3 class="text-lg font-semibold text-gray-800 mb-3">Recent Requests</h3>
 
-        <!-- Filter buttons by document type -->
+        <!-- Filter buttons -->
         <div class="flex flex-wrap gap-2 mb-4">
           <button type="button"
                   *ngFor="let f of docTypeFilters"
@@ -26,9 +25,10 @@
           </button>
         </div>
 
-        <!-- ✅ SCROLLABLE LIST -->
+        <!-- Scrollable list -->
         <div class="max-h-[520px] overflow-y-auto pr-1">
           <div *ngIf="filteredRequests.length > 0; else noRequestsAdmin" class="space-y-3">
+
             <div *ngFor="let req of filteredRequests"
                  [ngClass]="{
                   'border-l-4 p-3 rounded-r-lg': true,
@@ -39,7 +39,7 @@
                  }">
 
               <div class="flex justify-between items-center gap-3">
-                <!-- LEFT TEXT -->
+                <!-- LEFT -->
                 <div class="min-w-0">
                   <h4 class="font-medium text-gray-800 text-sm truncate">
                     {{ getDocumentTypeLabel(req.documentType) }}
@@ -57,6 +57,19 @@
                      }">
                     {{ req.status || 'Pending' }}
                   </p>
+
+                  <!-- ✅ ADMIN can see payment -->
+                  <div class="mt-2 text-[11px] text-gray-700 space-y-0.5">
+                    <div>
+                      <span class="font-semibold">Payment:</span>
+                      {{ getPaymentMethod(req) }}
+                    </div>
+
+                    <div *ngIf="isGcashPayment(req)">
+                      <span class="font-semibold">Ref#:</span>
+                      {{ getGcashReferenceNumber(req) || '—' }}
+                    </div>
+                  </div>
                 </div>
 
                 <!-- RIGHT ACTIONS -->
@@ -89,10 +102,9 @@
                           (click)="editRequest(req)"
                           class="text-purple-600 hover:text-purple-800 text-sm"
                           title="Edit">✎</button>
-
-                  
                 </div>
               </div>
+
             </div>
           </div>
 
@@ -102,40 +114,92 @@
         </div>
       </div>
 
-      <!-- CENTER: Document request form -->
+      <!-- CENTER: Form -->
       <div class="bg-white rounded-lg card-shadow p-6">
         <ng-container *ngTemplateOutlet="documentForm"></ng-container>
       </div>
 
       <!-- RIGHT: Claimed Items -->
       <div class="space-y-6">
-        <div class="bg-white rounded-lg card-shadow p-6">
+
+        <!-- ✅ FIXED HEIGHT PANEL (like Scheduling) -->
+        <div class="bg-white rounded-lg card-shadow p-6 h-[640px] flex flex-col">
+          <!-- Button stays at top -->
           <button type="button"
                   (click)="toggleClaimedItems()"
-                  class="w-full bg-purple-600 text-white py-2 rounded-md font-semibold hover:bg-purple-700 transition">
+                  class="w-full bg-purple-600 text-white py-2 rounded-md font-semibold hover:bg-purple-700 transition shrink-0">
             Claimed Items
           </button>
 
-          <div *ngIf="showClaimedItems" class="mt-4">
-            <div class="flex items-center justify-between mb-2">
+          <!-- Keep stable spacing even when collapsed -->
+          <div *ngIf="!showClaimedItems" class="mt-4 flex-1 min-h-0"></div>
+
+          <!-- Content area becomes flex column -->
+          <div *ngIf="showClaimedItems" class="mt-4 flex-1 min-h-0 flex flex-col">
+            <div class="flex items-center justify-between mb-2 shrink-0">
               <h3 class="text-lg font-semibold text-gray-800">Claimed History</h3>
               <span class="text-xs text-gray-500">Last 10</span>
             </div>
 
-            <!-- ✅ SCROLLABLE CLAIMED LIST -->
-            <div class="max-h-[520px] overflow-y-auto pr-1 space-y-3">
+            <!-- Filter buttons -->
+            <div class="flex flex-wrap gap-2 mb-4 shrink-0">
+              <button type="button"
+                      *ngFor="let f of docTypeFilters"
+                      (click)="setClaimedFilter(f.key)"
+                      class="px-3 py-1 rounded-full text-xs font-medium border"
+                      [ngClass]="selectedClaimedFilter === f.key
+                        ? 'bg-purple-600 text-white border-purple-600'
+                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'">
+                {{ f.label }}
+              </button>
+            </div>
+
+            <!-- ✅ Scroll area fills remaining height -->
+            <div class="flex-1 min-h-0 overflow-y-auto pr-1 space-y-3">
               <div *ngIf="claimedHistory.length > 0; else noClaimed">
                 <div *ngFor="let c of claimedHistory"
                      class="border-l-4 border-blue-500 bg-blue-50 p-3 rounded-r-lg">
-                  <div class="min-w-0">
-                    <h4 class="font-medium text-gray-800 text-sm truncate">
-                      {{ getDocumentTypeLabel(c.documentType) }}
-                    </h4>
-                    <p class="text-xs text-gray-600 truncate">
-                      {{ c.firstName }} {{ c.lastName }}
-                    </p>
-                    <p class="text-xs mt-1 text-blue-600">Claimed</p>
+
+                  <div class="flex items-start justify-between gap-3">
+                    <!-- LEFT -->
+                    <div class="min-w-0">
+                      <h4 class="font-medium text-gray-800 text-sm truncate">
+                        {{ getDocumentTypeLabel(c.documentType) }}
+                      </h4>
+                      <p class="text-xs text-gray-600 truncate">
+                        {{ c.firstName }} {{ c.lastName }}
+                      </p>
+                      <p class="text-xs mt-1 text-blue-600">Claimed</p>
+
+                      <!-- Admin can see payment -->
+                      <div class="mt-2 text-[11px] text-gray-700 space-y-0.5">
+                        <div>
+                          <span class="font-semibold">Payment:</span>
+                          {{ getPaymentMethod(c) }}
+                        </div>
+                        <div *ngIf="isGcashPayment(c)">
+                          <span class="font-semibold">Ref#:</span>
+                          {{ getGcashReferenceNumber(c) || '—' }}
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="flex flex-col gap-2 shrink-0">
+                      <button type="button"
+                              (click)="openView(c)"
+                              class="text-[10px] px-2.5 py-1 rounded-md font-medium border border-purple-600 text-purple-700 hover:bg-purple-50 transition">
+                        View
+                      </button>
+
+                      <button type="button"
+                              (click)="softDelete(c)"
+                              class="text-[10px] px-2.5 py-1 rounded-md font-medium border border-red-500 text-red-600 hover:bg-red-50 transition">
+                        Delete
+                      </button>
+                    </div>
                   </div>
+
                 </div>
               </div>
 
@@ -145,7 +209,9 @@
             </div>
           </div>
         </div>
+
       </div>
+
     </div>
 
     <!-- ================= USER LAYOUT ================= -->
@@ -194,11 +260,12 @@
               <li>Choose a document type.</li>
               <li>Fill the fields shown for that type.</li>
               <li>Enter your email and number of copies.</li>
+              <li>Choose payment method (Cash or GCash).</li>
               <li>Submit your request.</li>
             </ol>
           </div>
 
-          <!-- GCash -->
+          <!-- GCash panel -->
           <div *ngIf="showGcashDetails" class="bg-white rounded-xl shadow p-6 h-fit">
             <h3 class="text-lg font-semibold text-gray-800 mb-4">GCash Details</h3>
 
@@ -211,8 +278,7 @@
 
             <div>
               <p class="text-sm text-gray-600 mb-2">Scan QR to Pay</p>
-              <div
-                class="w-44 h-44 md:w-52 md:h-52 border-2 border-dashed border-gray-300 rounded-md flex items-center justify-center overflow-hidden">
+              <div class="w-44 h-44 md:w-52 md:h-52 border-2 border-dashed border-gray-300 rounded-md flex items-center justify-center overflow-hidden">
                 <img src="images/gcash-qr.png"
                      alt="GCash QR Code"
                      class="w-full h-full object-contain" />
@@ -220,23 +286,22 @@
             </div>
 
             <div class="mt-5">
-              <label for="referenceNumber"
-                     class="block text-sm font-medium text-gray-700 mb-1">
+              <label class="block text-sm font-medium text-gray-700 mb-1">
                 GCash Reference Number
               </label>
-              <input id="referenceNumber"
-                     name="reference_number"
-                     type="text"
+              <input type="text"
+                     formControlName="gcashReferenceNumber"
                      inputmode="numeric"
                      pattern="[0-9]{8,20}"
                      class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
                      placeholder="Enter reference number (digits only)" />
-              <button type="button"
-                      class="mt-3 w-full bg-purple-600 text-white py-2 rounded-md font-semibold hover:bg-purple-700 transition">
-                Verify
-              </button>
+              <p class="text-xs text-red-500 mt-1"
+                 *ngIf="requestForm.get('gcashReferenceNumber')?.touched && requestForm.get('gcashReferenceNumber')?.invalid">
+                Reference number is required (8–20 digits).
+              </p>
             </div>
           </div>
+
         </div>
       </div>
     </ng-template>
@@ -249,6 +314,8 @@
   <h3 class="text-xl font-semibold text-gray-800 mb-6">
     Request Church Document
   </h3>
+
+  <h4 class="font-semibold text-gray-800 mb-3">{{ selectedTypeLabel }}</h4>
 
   <form id="documentRequestForm"
         [formGroup]="requestForm"
@@ -297,34 +364,155 @@
       </div>
     </div>
 
-    <!-- Admin-only basic info -->
-    <div *ngIf="isAdmin" class="grid grid-cols-2 gap-4">
+    <!-- Baptismal / Confirmation -->
+    <div *ngIf="selectedType === 'baptismal' || selectedType === 'confirmation'"
+         class="border rounded-md p-4 space-y-4">
+      <h4 class="font-semibold text-gray-800">
+        {{ selectedType === 'baptismal' ? 'Baptismal Details' : 'Confirmation Details' }}
+      </h4>
+
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-2">Date of Birth</label>
-        <input type="date"
-               formControlName="birthDate"
+        <label class="block text-sm font-medium text-gray-700 mb-2">Name of the Child</label>
+        <input type="text"
+               formControlName="childName"
                class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
-        <div *ngIf="requestForm.get('birthDate')?.touched && requestForm.get('birthDate')?.invalid"
-             class="text-red-500 text-sm mt-1">
-          Birth Date is required
+      </div>
+
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            {{ selectedType === 'baptismal' ? 'Baptismal Date' : 'Confirmation Date' }}
+          </label>
+          <input type="date"
+                 formControlName="sacramentDate"
+                 class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Birthday</label>
+          <input type="date"
+                 formControlName="birthday"
+                 class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
         </div>
       </div>
 
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-2">Contact Phone</label>
+        <label class="block text-sm font-medium text-gray-700 mb-2">Purpose</label>
+        <textarea rows="3"
+                  formControlName="naPurpose"
+                  class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500"
+                  placeholder="State your purpose for requesting this certificate"></textarea>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-2">Contact Number</label>
         <input type="tel"
-               formControlName="phone"
+               formControlName="naContact"
                class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
-        <div *ngIf="requestForm.get('phone')?.touched && requestForm.get('phone')?.invalid"
-             class="text-red-500 text-sm mt-1">
-          Contact Phone is required
-        </div>
       </div>
     </div>
 
-    <!-- ✅ EMAIL (for both admin/user) -->
+    <!-- Wedding -->
+    <div *ngIf="selectedType === 'wedding'" class="border rounded-md p-4 space-y-4">
+      <h4 class="font-semibold text-gray-800">Wedding Certificate Details</h4>
+
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Groom's Full Name</label>
+          <input type="text"
+                 formControlName="groom"
+                 class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Bride's Full Name</label>
+          <input type="text"
+                 formControlName="bride"
+                 class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Wedding Date</label>
+          <input type="date"
+                 formControlName="weddingDate"
+                 class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Place/Parish</label>
+          <input type="text"
+                 formControlName="weddingPlace"
+                 class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-2">Purpose</label>
+        <textarea rows="3"
+                  formControlName="wedPurpose"
+                  class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500"
+                  placeholder="State your purpose for requesting this certificate"></textarea>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-2">Contact Number</label>
+        <input type="tel"
+               formControlName="wedContact"
+               class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
+      </div>
+    </div>
+
+    <!-- Death -->
+    <div *ngIf="selectedType === 'death'" class="border rounded-md p-4 space-y-4">
+      <h4 class="font-semibold text-gray-800">Death Certificate Details</h4>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-2">Full Name of Deceased</label>
+        <input type="text"
+               formControlName="deathName"
+               class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
+      </div>
+
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Date of Death</label>
+          <input type="date"
+                 formControlName="deathDate"
+                 class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Place of Death</label>
+          <input type="text"
+                 formControlName="deathPlace"
+                 class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-2">Relation of Requestor</label>
+        <input type="text"
+               formControlName="relation"
+               class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-2">Contact Number</label>
+        <input type="tel"
+               formControlName="deathContact"
+               class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-2">Purpose</label>
+        <textarea rows="3"
+                  formControlName="deathPurpose"
+                  class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500"
+                  placeholder="State your purpose (required)"></textarea>
+      </div>
+    </div>
+
+    <!-- Email -->
     <div>
-      <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+      <label class="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
       <input type="email"
              formControlName="email"
              class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
@@ -337,139 +525,44 @@
     <!-- Copies -->
     <div>
       <label class="block text-sm font-medium text-gray-700 mb-2">Number of Copies</label>
-      <input type="number"
-             formControlName="copies"
-             min="1"
-             class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
+      <select formControlName="copies"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
+        <option *ngFor="let opt of copyOptions" [value]="opt">{{ opt }}</option>
+      </select>
     </div>
 
-    <!-- ================= TYPE-SPECIFIC FIELDS ================= -->
+    <!-- Payment Method -->
+    <div class="pt-2">
+      <div class="flex items-center justify-between gap-3">
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Payment Method</label>
+          <p class="text-xs text-gray-500" *ngIf="!isGcash">
+            Default: Cash payment at the parish office.
+          </p>
+          <p class="text-xs text-purple-600" *ngIf="isGcash">
+            You chose GCash / e-payment. Enter details below and pay on the right.
+          </p>
+        </div>
 
-    <!-- Baptismal / Confirmation -->
-    <div *ngIf="selectedType === 'baptismal' || selectedType === 'confirmation'" class="grid grid-cols-2 gap-4">
-      <div class="col-span-2">
-        <label class="block text-sm font-medium text-gray-700 mb-2">Child Name</label>
+        <button type="button"
+                (click)="togglePaymentMethod()"
+                class="px-4 py-2 rounded-md border border-purple-600 text-purple-700 font-semibold hover:bg-purple-50 transition">
+          {{ isGcash ? 'Use Cash Payment' : 'Use GCash / E-payment' }}
+        </button>
+      </div>
+
+      <div *ngIf="isGcash" class="mt-3">
+        <label class="block text-sm font-medium text-gray-700 mb-2">GCash Reference Number</label>
         <input type="text"
-               formControlName="childName"
-               class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
-      </div>
-
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-2">Sacrament Date</label>
-        <input type="date"
-               formControlName="sacramentDate"
-               class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
-      </div>
-
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-2">Birthday</label>
-        <input type="date"
-               formControlName="birthday"
-               class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
-      </div>
-
-      <div class="col-span-2">
-        <label class="block text-sm font-medium text-gray-700 mb-2">Purpose</label>
-        <input type="text"
-               formControlName="naPurpose"
-               class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
-      </div>
-
-      <div class="col-span-2">
-        <label class="block text-sm font-medium text-gray-700 mb-2">Contact Phone</label>
-        <input type="tel"
-               formControlName="naContact"
-               class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
-      </div>
-    </div>
-
-    <!-- Wedding -->
-    <div *ngIf="selectedType === 'wedding'" class="grid grid-cols-2 gap-4">
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-2">Groom Name</label>
-        <input type="text"
-               formControlName="groom"
-               class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
-      </div>
-
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-2">Bride Name</label>
-        <input type="text"
-               formControlName="bride"
-               class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
-      </div>
-
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-2">Wedding Date</label>
-        <input type="date"
-               formControlName="weddingDate"
-               class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
-      </div>
-
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-2">Wedding Place</label>
-        <input type="text"
-               formControlName="weddingPlace"
-               class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
-      </div>
-
-      <div class="col-span-2">
-        <label class="block text-sm font-medium text-gray-700 mb-2">Purpose</label>
-        <input type="text"
-               formControlName="wedPurpose"
-               class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
-      </div>
-
-      <div class="col-span-2">
-        <label class="block text-sm font-medium text-gray-700 mb-2">Contact Phone</label>
-        <input type="tel"
-               formControlName="wedContact"
-               class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
-      </div>
-    </div>
-
-    <!-- Death -->
-    <div *ngIf="selectedType === 'death'" class="grid grid-cols-2 gap-4">
-      <div class="col-span-2">
-        <label class="block text-sm font-medium text-gray-700 mb-2">Full Name of Deceased</label>
-        <input type="text"
-               formControlName="deathName"
-               class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
-      </div>
-
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-2">Date of Death</label>
-        <input type="date"
-               formControlName="deathDate"
-               class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
-      </div>
-
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-2">Place of Death</label>
-        <input type="text"
-               formControlName="deathPlace"
-               class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
-      </div>
-
-      <div class="col-span-2">
-        <label class="block text-sm font-medium text-gray-700 mb-2">Relationship to Requestor</label>
-        <input type="text"
-               formControlName="relation"
-               class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
-      </div>
-
-      <div class="col-span-2">
-        <label class="block text-sm font-medium text-gray-700 mb-2">Contact Phone</label>
-        <input type="tel"
-               formControlName="deathContact"
-               class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
-      </div>
-
-      <div class="col-span-2">
-        <label class="block text-sm font-medium text-gray-700 mb-2">Purpose</label>
-        <input type="text"
-               formControlName="deathPurpose"
-               class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
+               formControlName="gcashReferenceNumber"
+               inputmode="numeric"
+               pattern="[0-9]{8,20}"
+               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+               placeholder="Enter reference number (digits only)" />
+        <p class="text-xs text-red-500 mt-1"
+           *ngIf="requestForm.get('gcashReferenceNumber')?.touched && requestForm.get('gcashReferenceNumber')?.invalid">
+          Reference number is required (8–20 digits).
+        </p>
       </div>
     </div>
 
@@ -493,35 +586,62 @@
 <div *ngIf="showReviewModal && reviewData"
      class="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
 
-  <div class="bg-white w-full max-w-xl rounded-xl shadow-xl">
+  <div class="bg-white w-full max-w-lg rounded-xl shadow-xl">
     <div class="px-5 py-4 border-b flex justify-between items-center">
       <h3 class="text-lg font-bold">Review Document Request</h3>
       <button (click)="backToEdit()"
               class="text-gray-500 hover:text-gray-700 text-xl leading-none">×</button>
     </div>
 
-    <div class="p-5 space-y-3 text-sm">
-      <div class="flex justify-between">
-        <span class="text-gray-600">Document Type</span>
-        <span class="font-semibold">{{ reviewData.documentTypeLabel }}</span>
+    <div class="p-5">
+      <p class="text-xs text-gray-500 mb-4">
+        Please review the details of your request before submitting. This will be sent to the parish administrator for confirmation.
+      </p>
+
+      <div class="border rounded-lg p-4 bg-white">
+        <div class="grid grid-cols-2 gap-4">
+          <ng-container *ngFor="let row of reviewRows; let i = index">
+            <div *ngIf="i < 4" class="space-y-1">
+              <p class="text-[10px] tracking-wide text-gray-500 uppercase font-semibold">
+                {{ row.label }}
+              </p>
+              <p class="text-sm text-gray-900 font-medium break-words">
+                {{ row.value }}
+              </p>
+            </div>
+          </ng-container>
+
+          <div class="col-span-2 space-y-1">
+            <p class="text-[10px] tracking-wide text-gray-500 uppercase font-semibold">
+              Payment
+            </p>
+            <p class="text-sm text-gray-900 font-medium break-words">
+              {{ (reviewRows[4] && reviewRows[4].value) ? reviewRows[4].value : '—' }}
+            </p>
+          </div>
+        </div>
+
+        <div class="my-4 border-t"></div>
+
+        <div class="space-y-2">
+          <ng-container *ngFor="let row of reviewRows; let i = index">
+            <div *ngIf="i >= 5" class="flex items-start justify-between gap-4">
+              <span class="text-sm text-gray-600">
+                {{ row.label }}
+              </span>
+              <span class="text-sm text-gray-900 font-medium text-right break-words max-w-[60%]">
+                {{ row.value }}
+              </span>
+            </div>
+          </ng-container>
+        </div>
+
+        <p class="text-[11px] text-gray-500 mt-4">
+          If everything looks correct, click <b>Confirm &amp; Submit</b>. Otherwise, go back and edit your information.
+        </p>
       </div>
 
-      <div class="flex justify-between">
-        <span class="text-gray-600">Name</span>
-        <span class="font-semibold">{{ reviewData.firstName }} {{ reviewData.lastName }}</span>
-      </div>
-
-      <div class="flex justify-between">
-        <span class="text-gray-600">Email</span>
-        <span class="font-semibold">{{ reviewData.email }}</span>
-      </div>
-
-      <div class="flex justify-between">
-        <span class="text-gray-600">Copies</span>
-        <span class="font-semibold">{{ reviewData.copies }}</span>
-      </div>
-
-      <div class="pt-3 flex gap-3">
+      <div class="pt-4 flex gap-3">
         <button type="button"
                 (click)="backToEdit()"
                 class="flex-1 bg-gray-100 text-gray-800 py-2 rounded-md hover:bg-gray-200">
@@ -532,6 +652,143 @@
                 (click)="confirmAndSubmit()"
                 class="flex-1 bg-purple-600 text-white py-2 rounded-md hover:bg-purple-700">
           Confirm &amp; Submit
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= ✅ VIEW MODAL (CLAIMED) ================= -->
+<div *ngIf="showViewModal && viewData"
+     class="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+
+  <div class="bg-white w-full max-w-xl rounded-xl shadow-xl">
+    <div class="px-5 py-4 border-b flex justify-between items-center">
+      <h3 class="text-lg font-bold">View Claimed Document</h3>
+      <button (click)="closeView()"
+              class="text-gray-500 hover:text-gray-700 text-xl leading-none">×</button>
+    </div>
+
+    <div class="p-5 space-y-3 text-sm">
+      <div class="flex justify-between">
+        <span class="text-gray-600">Document Type</span>
+        <span class="font-semibold">{{ viewData.documentTypeLabel }}</span>
+      </div>
+
+      <div class="flex justify-between">
+        <span class="text-gray-600">Status</span>
+        <span class="font-semibold">{{ viewData.status }}</span>
+      </div>
+
+      <div class="flex justify-between">
+        <span class="text-gray-600">Name</span>
+        <span class="font-semibold">{{ viewData.firstName }} {{ viewData.lastName }}</span>
+      </div>
+
+      <div class="flex justify-between">
+        <span class="text-gray-600">Email</span>
+        <span class="font-semibold">{{ viewData.email }}</span>
+      </div>
+
+      <div class="flex justify-between">
+        <span class="text-gray-600">Copies</span>
+        <span class="font-semibold">{{ viewData.copies }}</span>
+      </div>
+
+      <div class="flex justify-between">
+        <span class="text-gray-600">Payment</span>
+        <span class="font-semibold">{{ viewData.paymentMethod || 'Cash' }}</span>
+      </div>
+
+      <div class="flex justify-between" *ngIf="(viewData.paymentMethod || '').toLowerCase() === 'gcash'">
+        <span class="text-gray-600">GCash Ref#</span>
+        <span class="font-semibold">{{ viewData.gcashReferenceNumber || '—' }}</span>
+      </div>
+
+      <div class="pt-2 border-t"></div>
+
+      <div *ngIf="viewData.documentType === 'baptismal' || viewData.documentType === 'confirmation'" class="space-y-2">
+        <div class="flex justify-between">
+          <span class="text-gray-600">Child Name</span>
+          <span class="font-semibold">{{ viewData.childName || '—' }}</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-gray-600">Sacrament Date</span>
+          <span class="font-semibold">{{ viewData.sacramentDate || '—' }}</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-gray-600">Birthday</span>
+          <span class="font-semibold">{{ viewData.birthday || '—' }}</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-gray-600">Purpose</span>
+          <span class="font-semibold">{{ viewData.purpose || '—' }}</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-gray-600">Contact</span>
+          <span class="font-semibold">{{ viewData.contact || '—' }}</span>
+        </div>
+      </div>
+
+      <div *ngIf="viewData.documentType === 'wedding'" class="space-y-2">
+        <div class="flex justify-between">
+          <span class="text-gray-600">Groom</span>
+          <span class="font-semibold">{{ viewData.groom || '—' }}</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-gray-600">Bride</span>
+          <span class="font-semibold">{{ viewData.bride || '—' }}</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-gray-600">Wedding Date</span>
+          <span class="font-semibold">{{ viewData.weddingDate || '—' }}</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-gray-600">Place</span>
+          <span class="font-semibold">{{ viewData.weddingPlace || '—' }}</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-gray-600">Purpose</span>
+          <span class="font-semibold">{{ viewData.purpose || '—' }}</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-gray-600">Contact</span>
+          <span class="font-semibold">{{ viewData.contact || '—' }}</span>
+        </div>
+      </div>
+
+      <div *ngIf="viewData.documentType === 'death'" class="space-y-2">
+        <div class="flex justify-between">
+          <span class="text-gray-600">Deceased Name</span>
+          <span class="font-semibold">{{ viewData.deathName || '—' }}</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-gray-600">Death Date</span>
+          <span class="font-semibold">{{ viewData.deathDate || '—' }}</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-gray-600">Place of Death</span>
+          <span class="font-semibold">{{ viewData.deathPlace || '—' }}</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-gray-600">Relation</span>
+          <span class="font-semibold">{{ viewData.relation || '—' }}</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-gray-600">Purpose</span>
+          <span class="font-semibold">{{ viewData.purpose || '—' }}</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-gray-600">Contact</span>
+          <span class="font-semibold">{{ viewData.contact || '—' }}</span>
+        </div>
+      </div>
+
+      <div class="pt-4">
+        <button type="button"
+                (click)="closeView()"
+                class="w-full bg-gray-100 text-gray-800 py-2 rounded-md hover:bg-gray-200">
+          Close
         </button>
       </div>
     </div>

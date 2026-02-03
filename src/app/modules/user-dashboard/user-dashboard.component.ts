@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, ElementRef, HostListener, OnInit, ViewChild } from '@angular/core';
 import { RouterModule } from '@angular/router';
 
 import { AuthService } from '../../core/services/auth.service';
@@ -12,6 +12,8 @@ type DashboardResponse = {
   documents: { count: number; recent: RecentItem[] };
   scheduling: { count: number; recent: RecentItem[] };
 };
+
+type PanelKey = 'donations' | 'documents' | 'scheduling';
 
 @Component({
   selector: 'app-user-dashboard',
@@ -31,6 +33,22 @@ export class UserDashboardComponent implements OnInit {
 
   loading = false;
   error = '';
+
+  // ✅ used only for showing/hiding the "View All" button
+  limit = 5;
+
+  // ✅ "View All" now expands height ONLY (items are never hidden)
+  expanded: Record<PanelKey, boolean> = {
+    donations: false,
+    documents: false,
+    scheduling: false
+  };
+
+  activePanel: PanelKey = 'donations';
+
+  @ViewChild('donationsList') donationsList?: ElementRef<HTMLDivElement>;
+  @ViewChild('documentsList') documentsList?: ElementRef<HTMLDivElement>;
+  @ViewChild('schedulingList') schedulingList?: ElementRef<HTMLDivElement>;
 
   data: DashboardResponse = {
     donations: { count: 0, totalAmount: 0, recent: [] },
@@ -61,7 +79,6 @@ export class UserDashboardComponent implements OnInit {
     return me?.fullName || me?.name || me?.email || '';
   }
 
-  // ✅ IMPORTANT: bracket-safe getter for strict templates
   get(obj: any, key: string): any {
     return obj?.[key];
   }
@@ -72,7 +89,6 @@ export class UserDashboardComponent implements OnInit {
 
     this.dashboard.getMyDashboard().subscribe({
       next: (res: DashboardResponse) => {
-        // normalize so template never crashes
         this.data = {
           donations: {
             count: Number(res?.donations?.count ?? 0),
@@ -106,6 +122,50 @@ export class UserDashboardComponent implements OnInit {
       },
       complete: () => (this.loading = false)
     });
+  }
+
+  toggleViewAll(panel: PanelKey): void {
+    this.expanded[panel] = !this.expanded[panel];
+
+    // focus list after toggle so arrows work immediately
+    setTimeout(() => {
+      this.getPanelElement(panel)?.focus();
+    }, 0);
+  }
+
+  private getPanelElement(panel: PanelKey): HTMLDivElement | null {
+    if (panel === 'donations') return this.donationsList?.nativeElement ?? null;
+    if (panel === 'documents') return this.documentsList?.nativeElement ?? null;
+    return this.schedulingList?.nativeElement ?? null;
+  }
+
+  // ✅ Keyboard scroll support inside focused list
+  @HostListener('window:keydown', ['$event'])
+  onKeyDown(e: KeyboardEvent): void {
+    const target = e.target as HTMLElement | null;
+    const isInsideScrollable =
+      !!target && (target.closest?.('.fade-scroll') || target.classList?.contains('fade-scroll'));
+
+    if (!isInsideScrollable) return;
+
+    const el = this.getPanelElement(this.activePanel);
+    if (!el) return;
+
+    const step = 70;
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      el.scrollBy({ top: step, behavior: 'smooth' });
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      el.scrollBy({ top: -step, behavior: 'smooth' });
+    } else if (e.key === 'Home') {
+      e.preventDefault();
+      el.scrollTo({ top: 0, behavior: 'smooth' });
+    } else if (e.key === 'End') {
+      e.preventDefault();
+      el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+    }
   }
 
   fmtDate(value: any): string {

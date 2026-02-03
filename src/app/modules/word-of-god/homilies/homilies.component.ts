@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, AfterViewInit, OnDestroy, ElementRef, ViewChild, ViewChildren, QueryList } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { AmanuService } from '../../../core/services/amanu.service';
@@ -13,7 +13,7 @@ import { ToastrService } from 'ngx-toastr';
   templateUrl: './homilies.component.html',
   styleUrls: ['./homilies.component.scss']
 })
-export class HomiliesComponent implements OnInit {
+export class HomiliesComponent implements OnInit, AfterViewInit, OnDestroy {
   homilies: Amanu[] = [];
   filteredHomilies: Amanu[] = [];
   modalForm!: FormGroup;
@@ -40,6 +40,17 @@ export class HomiliesComponent implements OnInit {
   showViewModal = false;
   viewHomilyItem: Amanu | null = null;
 
+  // ✅ INTERNAL SCROLL STATE (max ~3 visible)
+  @ViewChild('homilyScroll') homilyScroll?: ElementRef<HTMLElement>;
+  @ViewChildren('homilyItem') homilyItems?: QueryList<ElementRef<HTMLElement>>;
+
+  scrollMaxHeight = 520; // fallback until measured
+  scrollAtTop = true;
+  scrollAtBottom = false;
+
+  private resizeObserver?: ResizeObserver;
+  private itemsSub?: any;
+
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
@@ -63,12 +74,35 @@ export class HomiliesComponent implements OnInit {
     this.loadHomilies();
   }
 
+  ngAfterViewInit(): void {
+    // Watch changes of *ngFor items so we recalc height when filters change
+    this.itemsSub = this.homilyItems?.changes.subscribe(() => {
+      this.deferRecalcScrollBox();
+    });
+
+    // Watch size changes (window resize / layout changes)
+    if (this.homilyScroll?.nativeElement && 'ResizeObserver' in window) {
+      this.resizeObserver = new ResizeObserver(() => this.deferRecalcScrollBox());
+      this.resizeObserver.observe(this.homilyScroll.nativeElement);
+    }
+
+    this.deferRecalcScrollBox();
+  }
+
+  ngOnDestroy(): void {
+    try { this.itemsSub?.unsubscribe?.(); } catch {}
+    try { this.resizeObserver?.disconnect(); } catch {}
+  }
+
   loadHomilies() {
     this.amanuService.getAll().subscribe(data => {
       this.homilies = data.filter(item => item.type === 'homily');
       this.filteredHomilies = [...this.homilies];
       this.populateYears();
       this.applyFilters();
+
+      // after data load, compute scroll height
+      this.deferRecalcScrollBox();
     });
   }
 
@@ -84,6 +118,8 @@ export class HomiliesComponent implements OnInit {
       const monthMatch = !this.selectedMonth || (d.getMonth() + 1) === this.selectedMonth;
       return yearMatch && monthMatch;
     });
+
+    this.deferRecalcScrollBox();
   }
 
   /** Modal Management */
@@ -256,5 +292,82 @@ export class HomiliesComponent implements OnInit {
   getShortContent(content?: string): string {
     if (!content) return '';
     return content.length > 200 ? content.slice(0, 200) + '...' : content;
+  }
+
+  // ==========================
+  // ✅ INTERNAL SCROLL HELPERS
+  // ==========================
+
+  private deferRecalcScrollBox(): void {
+    setTimeout(() => {
+      this.recalcScrollBoxMaxHeight();
+      this.onScroll();
+    }, 0);
+  }
+
+  private recalcScrollBoxMaxHeight(): void {
+    const scrollEl = this.homilyScroll?.nativeElement;
+    const items = this.homilyItems?.toArray().map(x => x.nativeElement) || [];
+    if (!scrollEl) return;
+
+    if (items.length === 0) {
+      this.scrollMaxHeight = 220;
+      return;
+    }
+
+    const n = Math.min(3, items.length);
+    const firstRect = items[0].getBoundingClientRect();
+    const nthRect = items[n - 1].getBoundingClientRect();
+
+    const contentHeight = Math.max(0, nthRect.bottom - firstRect.top);
+    const buffer = 16;
+
+    this.scrollMaxHeight = Math.max(260, Math.min(700, Math.round(contentHeight + buffer)));
+  }
+
+  onScroll(): void {
+    const el = this.homilyScroll?.nativeElement;
+    if (!el) return;
+
+    const top = el.scrollTop;
+    const max = el.scrollHeight - el.clientHeight;
+
+    this.scrollAtTop = top <= 1;
+    this.scrollAtBottom = max <= 1 ? true : top >= (max - 1);
+  }
+
+  onScrollKey(e: KeyboardEvent): void {
+    const el = this.homilyScroll?.nativeElement;
+    if (!el) return;
+
+    const line = 56;
+    const page = Math.max(200, Math.floor(el.clientHeight * 0.9));
+
+    const key = e.key;
+
+    if (key === 'ArrowDown') {
+      e.preventDefault();
+      el.scrollBy({ top: line, behavior: 'smooth' });
+    } else if (key === 'ArrowUp') {
+      e.preventDefault();
+      el.scrollBy({ top: -line, behavior: 'smooth' });
+    } else if (key === 'PageDown') {
+      e.preventDefault();
+      el.scrollBy({ top: page, behavior: 'smooth' });
+    } else if (key === 'PageUp') {
+      e.preventDefault();
+      el.scrollBy({ top: -page, behavior: 'smooth' });
+    } else if (key === 'Home') {
+      e.preventDefault();
+      el.scrollTo({ top: 0, behavior: 'smooth' });
+    } else if (key === 'End') {
+      e.preventDefault();
+      el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+    } else if (key === ' ' || key === 'Spacebar') {
+      e.preventDefault();
+      el.scrollBy({ top: e.shiftKey ? -page : page, behavior: 'smooth' });
+    }
+
+    setTimeout(() => this.onScroll(), 80);
   }
 }

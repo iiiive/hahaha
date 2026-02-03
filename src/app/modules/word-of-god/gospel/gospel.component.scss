@@ -1,0 +1,57 @@
+/* Internal scroll container */
+.gospel-scrollbox {
+  position: relative;
+  overflow-y: auto;
+  padding-right: 6px; /* keeps scrollbar from covering content */
+  scroll-behavior: smooth;
+  outline: none;
+}
+
+/* ✅ Animated fade overlays (top & bottom) */
+.gospel-scrollbox::before,
+.gospel-scrollbox::after {
+  content: "";
+  position: sticky;
+  left: 0;
+  right: 0;
+  height: 22px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 180ms ease;
+  z-index: 5;
+}
+
+.gospel-scrollbox::before {
+  top: 0;
+  background: linear-gradient(to bottom, rgba(255,255,255,0.95), rgba(255,255,255,0));
+}
+
+.gospel-scrollbox::after {
+  bottom: 0;
+  background: linear-gradient(to top, rgba(255,255,255,0.95), rgba(255,255,255,0));
+}
+
+/* show top fade only if NOT at top */
+.gospel-scrollbox:not(.at-top)::before {
+  opacity: 1;
+}
+
+/* show bottom fade only if NOT at bottom */
+.gospel-scrollbox:not(.at-bottom)::after {
+  opacity: 1;
+}
+
+/* ✅ Optional nice scrollbar (won't break anything) */
+.gospel-scrollbox::-webkit-scrollbar {
+  width: 10px;
+}
+
+.gospel-scrollbox::-webkit-scrollbar-thumb {
+  background: rgba(124, 58, 237, 0.25);
+  border-radius: 999px;
+  border: 3px solid rgba(255, 255, 255, 0.9);
+}
+
+.gospel-scrollbox::-webkit-scrollbar-thumb:hover {
+  background: rgba(124, 58, 237, 0.35);
+}

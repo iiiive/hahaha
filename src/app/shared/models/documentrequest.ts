@@ -1,39 +1,45 @@
 export interface Documentrequest {
-    id: number;
-    documentType: string;
+  id: number;
+  documentType: string;
 
-    firstName?: string;
-    lastName?: string;
+  firstName?: string;
+  lastName?: string;
 
-    /** DateOnly -> "yyyy-MM-dd" string */
-    dateOfBirth?: string;
+  /** DateOnly -> "yyyy-MM-dd" string */
+  dateOfBirth?: string;
 
-    contactPhone: string;
-    emailAddress: string;
+  contactPhone: string;
+  emailAddress: string;
 
-    purposeOfRequest?: string;
-    numberOfCopies?: string;
+  purposeOfRequest?: string;
+  numberOfCopies?: string;
 
-    childName?: string;
+  // ✅ payment
+  paymentMethod?: string;              // "Cash" | "GCash"
+  gcashReferenceNumber?: string | null;
 
-    /** DateOnly -> "yyyy-MM-dd" string */
-    documentDate?: string;
+  childName?: string;
 
-    groomsFullName?: string;
-    bridesFullName?: string;
+  /** DateOnly -> "yyyy-MM-dd" string */
+  documentDate?: string | null;
 
-    address?: string;
-    fullNameDeceased?: string;
-    relationRequestor?: string;
+  groomsFullName?: string;
+  bridesFullName?: string;
 
-    status?: string; // e.g. "Ready", "Processing", "Submitted"
+  address?: string;
+  fullNameDeceased?: string;
+  relationRequestor?: string;
 
-    /** DateTime -> ISO string */
-    createdAt: string;
+  status?: string;
 
-    /** DateTime -> ISO string */
-    modifiedAt?: string;
+  /** DateTime -> ISO string */
+  createdAt: string;
 
-    createdBy: string;
-    modifiedBy?: string;
+  /** DateTime -> ISO string */
+  modifiedAt?: string;
+
+  createdBy: string;
+  modifiedBy?: string;
+
+  userId?: number | null;
 }

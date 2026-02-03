@@ -342,14 +342,31 @@
 
       <!-- ===================== UPCOMING APPOINTMENTS (ADMIN RIGHT) ===================== -->
       <div *ngIf="isAdmin" class="bg-white rounded-lg card-shadow p-6">
-        <h3 class="text-xl font-semibold text-gray-800 mb-5">Upcoming Appointments</h3>
+        <h3 class="text-xl font-semibold text-gray-800 mb-3">Upcoming Appointments</h3>
+
+        <!-- ✅ Upcoming filter buttons (same as requests tabs) -->
+        <div class="flex flex-wrap gap-2 mb-4">
+          <button
+            type="button"
+            *ngFor="let f of serviceTypeFilters"
+            (click)="setUpcomingFilter(f.key)"
+            class="px-3 py-1 rounded-full text-xs font-medium border"
+            [ngClass]="
+              selectedUpcomingFilter === f.key
+                ? 'bg-purple-600 text-white border-purple-600'
+                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+            "
+          >
+            {{ f.label }}
+          </button>
+        </div>
 
         <!-- ✅ SCROLL AREA -->
         <div
-          *ngIf="schedules.length > 0; else noAppointments"
+          *ngIf="filteredUpcomingSchedules.length > 0; else noAppointments"
           class="scrollbox max-h-[520px] overflow-y-auto pr-2 space-y-3"
         >
-          <div *ngFor="let appt of schedules" class="p-4 rounded-r-lg" [ngClass]="appt.colorClass">
+          <div *ngFor="let appt of filteredUpcomingSchedules" class="p-4 rounded-r-lg" [ngClass]="appt.colorClass">
             <div class="flex justify-between items-start">
               <div>
                 <h4 class="font-semibold text-gray-800">

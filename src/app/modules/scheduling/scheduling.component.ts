@@ -28,6 +28,10 @@ export class SchedulingComponent implements OnInit {
   pendingSchedules: ServiceSchedule[] = [];
 
   selectedServiceFilter: string = 'all';
+
+  // ✅ NEW: filter for Upcoming Appointments (right panel)
+  selectedUpcomingFilter: string = 'all';
+
   serviceTypeFilters = [
     { key: 'all', label: 'All' },
     { key: 'wedding', label: 'Wedding' },
@@ -156,8 +160,21 @@ export class SchedulingComponent implements OnInit {
     );
   }
 
+  // ✅ NEW: filtered list for Upcoming Appointments (right panel)
+  get filteredUpcomingSchedules(): ServiceSchedule[] {
+    if (this.selectedUpcomingFilter === 'all') return this.schedules;
+    return this.schedules.filter(
+      (s) => (s.serviceType ?? '').toLowerCase() === this.selectedUpcomingFilter
+    );
+  }
+
   setServiceFilter(key: string) {
     this.selectedServiceFilter = key;
+  }
+
+  // ✅ NEW: set filter for Upcoming Appointments
+  setUpcomingFilter(key: string) {
+    this.selectedUpcomingFilter = key;
   }
 
   // ---------- REVIEW FLOW ----------
@@ -185,7 +202,6 @@ export class SchedulingComponent implements OnInit {
     const formValue = this.schedulingForm.value;
 
     const baseStatus: ScheduleStatus = 'Pending';
-
 
     const schedule: ServiceSchedule = {
       id: this.editingId ?? 0,

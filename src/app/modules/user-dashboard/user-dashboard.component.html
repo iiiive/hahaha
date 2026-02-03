@@ -8,16 +8,36 @@
     <!-- ONLINE GIVING -->
     <div class="card">
       <div class="card-head">
-        <div>
-          <div class="card-title">Online Giving</div>
-          <div class="muted small">
-            Total Donations: <b>{{ data.donations.count }}</b> •
-            Total Amount: <b>₱{{ money(data.donations.totalAmount) }}</b>
+        <div class="head-row">
+          <div>
+            <div class="card-title">Online Giving</div>
+            <div class="muted small">
+              Total Donations: <b>{{ data.donations.count }}</b> •
+              Total Amount: <b>₱{{ money(data.donations.totalAmount) }}</b>
+            </div>
           </div>
+
+          <button
+            *ngIf="(data.donations.recent?.length || 0) > limit"
+            type="button"
+            class="view-all-btn"
+            (click)="toggleViewAll('donations')"
+            [attr.aria-expanded]="expanded.donations"
+          >
+            {{ expanded.donations ? 'Compact' : 'View All' }}
+          </button>
         </div>
       </div>
 
-      <div class="list" *ngIf="data.donations.recent?.length; else noDonations">
+      <div
+        class="list fade-scroll"
+        [class.scroll-5]="!expanded.donations"
+        [class.scroll-all]="expanded.donations"
+        *ngIf="data.donations.recent?.length; else noDonations"
+        tabindex="0"
+        (focus)="activePanel = 'donations'"
+        #donationsList
+      >
         <div class="row" *ngFor="let x of data.donations.recent">
           <div class="row-left">
             <div class="strong">{{ donationTypeLabel(x) }}</div>
@@ -42,15 +62,35 @@
     <!-- DOCUMENT REQUESTS -->
     <div class="card">
       <div class="card-head">
-        <div>
-          <div class="card-title">Document Requests</div>
-          <div class="muted small">
-            Total Requests: <b>{{ data.documents.count }}</b>
+        <div class="head-row">
+          <div>
+            <div class="card-title">Document Requests</div>
+            <div class="muted small">
+              Total Requests: <b>{{ data.documents.count }}</b>
+            </div>
           </div>
+
+          <button
+            *ngIf="(data.documents.recent?.length || 0) > limit"
+            type="button"
+            class="view-all-btn"
+            (click)="toggleViewAll('documents')"
+            [attr.aria-expanded]="expanded.documents"
+          >
+            {{ expanded.documents ? 'Compact' : 'View All' }}
+          </button>
         </div>
       </div>
 
-      <div class="list" *ngIf="data.documents.recent?.length; else noDocs">
+      <div
+        class="list fade-scroll"
+        [class.scroll-5]="!expanded.documents"
+        [class.scroll-all]="expanded.documents"
+        *ngIf="data.documents.recent?.length; else noDocs"
+        tabindex="0"
+        (focus)="activePanel = 'documents'"
+        #documentsList
+      >
         <div class="row" *ngFor="let r of data.documents.recent">
           <div class="row-left">
             <div class="strong">
@@ -86,15 +126,35 @@
     <!-- SCHEDULING -->
     <div class="card">
       <div class="card-head">
-        <div>
-          <div class="card-title">Service Scheduling</div>
-          <div class="muted small">
-            Total Schedules: <b>{{ data.scheduling.count }}</b>
+        <div class="head-row">
+          <div>
+            <div class="card-title">Service Scheduling</div>
+            <div class="muted small">
+              Total Schedules: <b>{{ data.scheduling.count }}</b>
+            </div>
           </div>
+
+          <button
+            *ngIf="(data.scheduling.recent?.length || 0) > limit"
+            type="button"
+            class="view-all-btn"
+            (click)="toggleViewAll('scheduling')"
+            [attr.aria-expanded]="expanded.scheduling"
+          >
+            {{ expanded.scheduling ? 'Compact' : 'View All' }}
+          </button>
         </div>
       </div>
 
-      <div class="list" *ngIf="data.scheduling.recent?.length; else noSched">
+      <div
+        class="list fade-scroll"
+        [class.scroll-5]="!expanded.scheduling"
+        [class.scroll-all]="expanded.scheduling"
+        *ngIf="data.scheduling.recent?.length; else noSched"
+        tabindex="0"
+        (focus)="activePanel = 'scheduling'"
+        #schedulingList
+      >
         <div class="row" *ngFor="let s of data.scheduling.recent">
           <div class="row-left">
             <div class="strong">

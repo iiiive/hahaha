@@ -40,69 +40,81 @@
     </div>
   </div>
 
-  <!-- Homilies List -->
-  <div class="space-y-4">
-    <div
-      *ngFor="let h of filteredHomilies"
-      class="p-4 border border-purple-100 rounded-lg shadow-sm
-             hover:bg-purple-50/40 cursor-pointer transition"
-      (click)="openViewHomily(h)"
-    >
-      <!-- Top row -->
-      <div class="flex justify-between items-start mb-3 gap-3">
-        <div>
-          <h4 class="text-lg font-semibold text-gray-800">
-            {{ h.title }}
-          </h4>
-          <p class="text-sm text-gray-500">
-            {{ h.date | date: 'MMMM d, y' }}
-          </p>
+  <!-- ✅ Homilies List (INTERNAL SCROLL + FADE + KEYBOARD) -->
+  <div
+    #homilyScroll
+    class="homily-scrollbox"
+    [class.at-top]="scrollAtTop"
+    [class.at-bottom]="scrollAtBottom"
+    [style.maxHeight.px]="scrollMaxHeight"
+    tabindex="0"
+    (scroll)="onScroll()"
+    (keydown)="onScrollKey($event)"
+  >
+    <div class="space-y-4">
+      <div
+        #homilyItem
+        *ngFor="let h of filteredHomilies"
+        class="p-4 border border-purple-100 rounded-lg shadow-sm
+               hover:bg-purple-50/40 cursor-pointer transition"
+        (click)="openViewHomily(h)"
+      >
+        <!-- Top row -->
+        <div class="flex justify-between items-start mb-3 gap-3">
+          <div>
+            <h4 class="text-lg font-semibold text-gray-800">
+              {{ h.title }}
+            </h4>
+            <p class="text-sm text-gray-500">
+              {{ h.date | date: 'MMMM d, y' }}
+            </p>
+          </div>
+
+          <div class="text-right">
+            <span
+              *ngIf="h.theme"
+              class="bg-purple-100 text-purple-800 text-xs font-bold px-2.5 py-1 rounded-full"
+            >
+              {{ h.theme }}
+            </span>
+            <p *ngIf="h.scripture" class="text-xs text-gray-500 mt-1">
+              {{ h.scripture }}
+            </p>
+          </div>
         </div>
 
-        <div class="text-right">
-          <span
-            *ngIf="h.theme"
-            class="bg-purple-100 text-purple-800 text-xs font-bold px-2.5 py-1 rounded-full"
+        <!-- Content Preview -->
+        <div class="bg-purple-50 border-l-4 border-purple-500 p-4 rounded-r-lg mb-3">
+          <div class="text-gray-700 text-sm leading-relaxed italic">
+            "{{ getShortContent(h.content) }}"
+          </div>
+        </div>
+
+        <!-- Admin Actions -->
+        <div class="flex gap-2" *ngIf="isAdmin">
+          <button
+            (click)="editContent(h.id); $event.stopPropagation()"
+            class="bg-purple-600 text-white px-4 py-2 rounded-md
+                   hover:bg-purple-700 transition text-sm font-semibold"
           >
-            {{ h.theme }}
-          </span>
-          <p *ngIf="h.scripture" class="text-xs text-gray-500 mt-1">
-            {{ h.scripture }}
-          </p>
+            ✏️ Edit
+          </button>
+
+          <button
+            (click)="deleteContent(h.id); $event.stopPropagation()"
+            class="bg-red-600 text-white px-4 py-2 rounded-md
+                   hover:bg-red-700 transition text-sm font-semibold"
+          >
+            🗑️ Delete
+          </button>
         </div>
       </div>
 
-      <!-- Content Preview -->
-      <div class="bg-purple-50 border-l-4 border-purple-500 p-4 rounded-r-lg mb-3">
-        <div class="text-gray-700 text-sm leading-relaxed italic">
-          "{{ getShortContent(h.content) }}"
-        </div>
+      <!-- Empty State -->
+      <div *ngIf="filteredHomilies.length === 0"
+           class="text-gray-500 italic text-center py-6">
+        No homilies found for this filter.
       </div>
-
-      <!-- Admin Actions -->
-      <div class="flex gap-2" *ngIf="isAdmin">
-        <button
-          (click)="editContent(h.id); $event.stopPropagation()"
-          class="bg-purple-600 text-white px-4 py-2 rounded-md
-                 hover:bg-purple-700 transition text-sm font-semibold"
-        >
-          ✏️ Edit
-        </button>
-
-        <button
-          (click)="deleteContent(h.id); $event.stopPropagation()"
-          class="bg-red-600 text-white px-4 py-2 rounded-md
-                 hover:bg-red-700 transition text-sm font-semibold"
-        >
-          🗑️ Delete
-        </button>
-      </div>
-    </div>
-
-    <!-- Empty State -->
-    <div *ngIf="filteredHomilies.length === 0"
-         class="text-gray-500 italic text-center py-6">
-      No homilies found for this filter.
     </div>
   </div>
 </div>

@@ -47,6 +47,13 @@
   );
 }
 
+.head-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
 .card-title {
   font-size: 1rem;
   font-weight: 700;
@@ -55,25 +62,110 @@
 }
 
 /* Typography helpers */
-.muted {
-  color: #6b7280;
-}
+.muted { color: #6b7280; }
+.small { font-size: 0.82rem; line-height: 1.25rem; }
+.strong { font-weight: 700; color: #111827; }
 
-.small {
-  font-size: 0.82rem;
-  line-height: 1.25rem;
-}
-
-.strong {
+/* View all button */
+.view-all-btn {
+  flex-shrink: 0;
+  border: 1px solid rgba(124, 58, 237, 0.25);
+  background: rgba(124, 58, 237, 0.08);
+  color: #6d28d9;
   font-weight: 700;
-  color: #111827;
+  font-size: 0.78rem;
+  padding: 7px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: transform 0.12s ease, background 0.12s ease, border-color 0.12s ease;
+
+  &:hover {
+    background: rgba(124, 58, 237, 0.12);
+    border-color: rgba(124, 58, 237, 0.35);
+    transform: translateY(-1px);
+  }
+
+  &:active { transform: translateY(0); }
 }
 
-/* ===== List Rows ===== */
+/* ===== List ===== */
 .list {
   padding: 10px 12px 14px;
+  scroll-behavior: smooth;
 }
 
+/* ✅ Default: show about 5 rows then internal scroll for the rest */
+.scroll-5 {
+  max-height: 340px; /* approx ~5 rows */
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
+/* ✅ Expanded: still scrollable, just taller */
+.scroll-all {
+  max-height: 560px;
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
+/* keyboard focus outline */
+.fade-scroll:focus {
+  outline: 2px solid rgba(124, 58, 237, 0.25);
+  outline-offset: 2px;
+  border-radius: 12px;
+}
+
+/* Scrollbar */
+.scroll-5::-webkit-scrollbar,
+.scroll-all::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scroll-5::-webkit-scrollbar-thumb,
+.scroll-all::-webkit-scrollbar-thumb {
+  background: rgba(124, 58, 237, 0.35);
+  border-radius: 999px;
+}
+
+.scroll-5::-webkit-scrollbar-track,
+.scroll-all::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Fade hints */
+.fade-scroll {
+  position: relative;
+}
+
+.fade-scroll::before,
+.fade-scroll::after {
+  content: "";
+  position: sticky;
+  left: 0;
+  right: 0;
+  height: 18px;
+  display: block;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.18s ease;
+  z-index: 2;
+}
+
+.fade-scroll::before {
+  top: 0;
+  background: linear-gradient(to bottom, rgba(255,255,255,0.95), rgba(255,255,255,0));
+}
+
+.fade-scroll::after {
+  bottom: 0;
+  background: linear-gradient(to top, rgba(255,255,255,0.95), rgba(255,255,255,0));
+  opacity: 1;
+}
+
+.fade-scroll:focus-within::before { opacity: 1; }
+.fade-scroll:focus-within::after { opacity: 1; }
+
+/* ===== Rows ===== */
 .row {
   display: flex;
   justify-content: space-between;
@@ -93,18 +185,9 @@
   }
 }
 
-.row:last-child {
-  margin-bottom: 0;
-}
-
-.row-left {
-  min-width: 0;
-}
-
-.row-right {
-  text-align: right;
-  flex-shrink: 0;
-}
+.row:last-child { margin-bottom: 0; }
+.row-left { min-width: 0; }
+.row-right { text-align: right; flex-shrink: 0; }
 
 /* prevent long text from breaking layout */
 .row-left .strong,
@@ -119,7 +202,7 @@
   }
 }
 
-/* ===== Empty State ===== */
+/* Empty state */
 .empty {
   padding: 18px 16px;
   text-align: center;
@@ -127,7 +210,7 @@
   color: #6b7280;
 }
 
-/* ===== Status Pills ===== */
+/* Pills */
 .pill {
   display: inline-flex;
   align-items: center;
@@ -143,7 +226,6 @@
   white-space: nowrap;
 }
 
-/* special colors for document pills */
 .pill.ready {
   border-color: rgba(22, 163, 74, 0.35);
   background: rgba(22, 163, 74, 0.10);

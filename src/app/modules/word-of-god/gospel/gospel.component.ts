@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, AfterViewInit, OnDestroy, ElementRef, ViewChild, ViewChildren, QueryList } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Amanu } from '../../../shared/models/amanu';
@@ -6,22 +6,14 @@ import { AuthService } from '../../../core/services/auth.service';
 import { AmanuService } from '../../../core/services/amanu.service';
 import { ToastrService } from 'ngx-toastr';
 
-interface Gospel {
-  id: number;
-  title: string;
-  date: string; // keep as string for easier binding to input[type="date"]
-  month: number;
-  content: string;
-  reading: string;
-}
-
 @Component({
   selector: 'app-gospel',
   standalone: true,
   imports: [CommonModule, FormsModule, ReactiveFormsModule],
-  templateUrl: './gospel.component.html'
+  templateUrl: './gospel.component.html',
+  styleUrls: ['./gospel.component.scss']
 })
-export class GospelComponent implements OnInit {
+export class GospelComponent implements OnInit, AfterViewInit, OnDestroy {
   modalForm!: FormGroup;
   gospels: Amanu[] = [];
   filteredGospels: Amanu[] = [];
@@ -50,6 +42,17 @@ export class GospelComponent implements OnInit {
   showViewModal = false;
   viewGospelItem: Amanu | null = null;
 
+  // ✅ INTERNAL SCROLL STATE (max ~3 visible)
+  @ViewChild('gospelScroll') gospelScroll?: ElementRef<HTMLElement>;
+  @ViewChildren('gospelItem') gospelItems?: QueryList<ElementRef<HTMLElement>>;
+
+  scrollMaxHeight = 520; // fallback until measured
+  scrollAtTop = true;
+  scrollAtBottom = false;
+
+  private resizeObserver?: ResizeObserver;
+  private itemsSub?: any;
+
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
@@ -70,7 +73,28 @@ export class GospelComponent implements OnInit {
       reading: ['', Validators.required],
       content: ['', Validators.required]
     });
+
     this.loadGospels();
+  }
+
+  ngAfterViewInit(): void {
+    // Watch changes of *ngFor items so we recalc height when filters change
+    this.itemsSub = this.gospelItems?.changes.subscribe(() => {
+      this.deferRecalcScrollBox();
+    });
+
+    // Watch size changes (window resize / layout changes)
+    if (this.gospelScroll?.nativeElement && 'ResizeObserver' in window) {
+      this.resizeObserver = new ResizeObserver(() => this.deferRecalcScrollBox());
+      this.resizeObserver.observe(this.gospelScroll.nativeElement);
+    }
+
+    this.deferRecalcScrollBox();
+  }
+
+  ngOnDestroy(): void {
+    try { this.itemsSub?.unsubscribe?.(); } catch {}
+    try { this.resizeObserver?.disconnect(); } catch {}
   }
 
   loadGospels() {
@@ -82,6 +106,9 @@ export class GospelComponent implements OnInit {
       this.filteredGospels = [...this.gospels];
       this.populateYears();
       this.applyFilters();
+
+      // after data load, compute scroll height
+      this.deferRecalcScrollBox();
     });
   }
 
@@ -97,6 +124,8 @@ export class GospelComponent implements OnInit {
       const monthMatch = !this.selectedMonth || (d.getMonth() + 1) === this.selectedMonth;
       return yearMatch && monthMatch;
     });
+
+    this.deferRecalcScrollBox();
   }
 
   /** Modal Management */
@@ -231,7 +260,6 @@ export class GospelComponent implements OnInit {
   }
 
   // --- REVIEW FLOW ---
-
   startReview() {
     if (this.modalForm.invalid) {
       this.toastr.warning('Please fill all required fields.');
@@ -264,5 +292,92 @@ export class GospelComponent implements OnInit {
   getShortContent(content?: string): string {
     if (!content) return '';
     return content.length > 200 ? content.slice(0, 200) + '...' : content;
+  }
+
+  // ==========================
+  // ✅ INTERNAL SCROLL HELPERS
+  // ==========================
+
+  private deferRecalcScrollBox(): void {
+    // allow DOM to paint after *ngFor changes
+    setTimeout(() => {
+      this.recalcScrollBoxMaxHeight();
+      this.onScroll();
+    }, 0);
+  }
+
+  private recalcScrollBoxMaxHeight(): void {
+    const scrollEl = this.gospelScroll?.nativeElement;
+    const items = this.gospelItems?.toArray().map(x => x.nativeElement) || [];
+    if (!scrollEl) return;
+
+    if (items.length === 0) {
+      this.scrollMaxHeight = 220; // empty message
+      return;
+    }
+
+    // If fewer than 3, just fit them (no awkward big empty scroll)
+    const n = Math.min(3, items.length);
+
+    // Compute height from first item top to nth item bottom (includes gaps naturally)
+    const firstRect = items[0].getBoundingClientRect();
+    const nthRect = items[n - 1].getBoundingClientRect();
+
+    const contentHeight = Math.max(0, nthRect.bottom - firstRect.top);
+
+    // Add small buffer for padding/comfort
+    const buffer = 16;
+
+    // Also clamp so it never becomes ridiculously small/large
+    this.scrollMaxHeight = Math.max(260, Math.min(700, Math.round(contentHeight + buffer)));
+  }
+
+  onScroll(): void {
+    const el = this.gospelScroll?.nativeElement;
+    if (!el) return;
+
+    const top = el.scrollTop;
+    const max = el.scrollHeight - el.clientHeight;
+
+    this.scrollAtTop = top <= 1;
+    this.scrollAtBottom = max <= 1 ? true : top >= (max - 1);
+  }
+
+  onScrollKey(e: KeyboardEvent): void {
+    const el = this.gospelScroll?.nativeElement;
+    if (!el) return;
+
+    const line = 56; // per arrow step
+    const page = Math.max(200, Math.floor(el.clientHeight * 0.9));
+
+    // Only handle keys that should scroll the list
+    const key = e.key;
+
+    if (key === 'ArrowDown') {
+      e.preventDefault();
+      el.scrollBy({ top: line, behavior: 'smooth' });
+    } else if (key === 'ArrowUp') {
+      e.preventDefault();
+      el.scrollBy({ top: -line, behavior: 'smooth' });
+    } else if (key === 'PageDown') {
+      e.preventDefault();
+      el.scrollBy({ top: page, behavior: 'smooth' });
+    } else if (key === 'PageUp') {
+      e.preventDefault();
+      el.scrollBy({ top: -page, behavior: 'smooth' });
+    } else if (key === 'Home') {
+      e.preventDefault();
+      el.scrollTo({ top: 0, behavior: 'smooth' });
+    } else if (key === 'End') {
+      e.preventDefault();
+      el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+    } else if (key === ' ' || key === 'Spacebar') {
+      // Space scrolls down like browsers, Shift+Space scrolls up
+      e.preventDefault();
+      el.scrollBy({ top: e.shiftKey ? -page : page, behavior: 'smooth' });
+    }
+
+    // update fade state
+    setTimeout(() => this.onScroll(), 80);
   }
 }
