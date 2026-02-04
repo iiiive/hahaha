@@ -53,8 +53,10 @@ export class DonationsComponent implements OnInit {
     'January', 'February', 'March', 'April', 'May', 'June',
     'July', 'August', 'September', 'October', 'November', 'December'
   ];
-  selectedMonthIndex = new Date().getMonth();
-  selectedYear = new Date().getFullYear();
+
+  // ✅ keep these as NUMBERS always
+  selectedMonthIndex: number = new Date().getMonth();
+  selectedYear: number = new Date().getFullYear();
 
   donationTypeFilter: DonationTypeOption = 'All Donations';
 
@@ -69,7 +71,7 @@ export class DonationsComponent implements OnInit {
 
   cashDonationType: DonationTypeOption = 'Offering';
   cashOtherDonationType = '';
-  cashDateStr = this.toDateInputValue(new Date()); // stored in remarks (NOT a DB column)
+  cashDateStr = this.toDateInputValue(new Date());
   isSaving = false;
 
   // Edit modal
@@ -102,28 +104,14 @@ export class DonationsComponent implements OnInit {
     return isNaN(d.getTime()) ? null : d;
   }
 
-  /**
-   * ✅ IMPORTANT:
-   * There is NO DonationDate column in DB/API.
-   * So we derive an "effective date" like this:
-   * 1) Try parse yyyy-mm-dd from remarks (format: "Name | Cash | 2026-01-31")
-   * 2) else fallback to createdAt
-   */
-  private getDateFromRemarks(d: Donation): Date | null {
-    const raw = String(d.remarks || '').trim();
-    if (!raw) return null;
-
-    const parts = raw.split('|').map(x => x.trim());
-    const maybeDate = parts.length >= 3 ? parts[2] : null; // 3rd part is the date we store
-    const dt = this.parseDate(maybeDate);
-    return dt;
-  }
-
+  // ✅ effective date for filtering: DonationDate > CreatedAt
   private getEffectiveDate(d: Donation): Date | null {
-    return this.getDateFromRemarks(d) ?? this.parseDate(d.createdAt);
+    const chosen = this.parseDate(d.donationDate ?? null);
+    if (chosen) return chosen;
+    return this.parseDate(d.createdAt);
   }
 
-  // Used by template (display)
+  // ✅ single function used by UI (so no donationDate errors)
   getDisplayDate(d: Donation): Date | null {
     return this.getEffectiveDate(d);
   }
@@ -222,7 +210,7 @@ export class DonationsComponent implements OnInit {
     let list = this.donations.filter((d) => {
       const dt = this.getEffectiveDate(d);
       if (!dt) return false;
-      return dt >= start && dt < endExcl;
+      return dt >= start && dt < endExcl; // ✅ month filter
     });
 
     if (this.donationTypeFilter !== 'All Donations') {
@@ -235,7 +223,7 @@ export class DonationsComponent implements OnInit {
       list = list.filter((d) => {
         const dt = this.getEffectiveDate(d);
         if (!dt) return false;
-        return dt >= wk.start && dt <= wk.end;
+        return dt >= wk.start && dt <= wk.end; // ✅ week filter
       });
     }
 
@@ -259,10 +247,9 @@ export class DonationsComponent implements OnInit {
     return name || 'Guest';
   }
 
-  // ✅ custom type label (shown beside donor name)
+  // ✅ custom label badge
   getCustomTypeLabel(d: Donation): string {
-    const cd = String(d?.customDonationType || '').trim();
-    return cd;
+    return String(d?.customDonationType || '').trim();
   }
 
   // --------- Add Cash Donation ----------
@@ -280,7 +267,7 @@ export class DonationsComponent implements OnInit {
     this.showAddModal = false;
   }
 
-  // ✅ send only fields that really exist in API DTO
+  // ✅ always correct type handling + sends donationDate
   saveCashDonation(): void {
     if (!this.cashFirstName.trim() || !this.cashLastName.trim()) {
       this.toastr.warning('Please enter First Name and Last Name.');
@@ -292,12 +279,12 @@ export class DonationsComponent implements OnInit {
     }
 
     const fullName = `${this.cashFirstName.trim()} ${this.cashLastName.trim()}`;
-    // ✅ Date stored inside remarks since DB has no DonationDate
     const remarks = `${fullName} | Cash | ${this.cashDateStr}`;
 
-    const donationType = this.cashDonationType;
+    let donationType = this.cashDonationType;
     let customDonationType: string | null = null;
 
+    // ✅ if Other, require custom label
     if (donationType === 'Other') {
       const v = this.cashOtherDonationType.trim();
       if (!v) {
@@ -305,14 +292,17 @@ export class DonationsComponent implements OnInit {
         return;
       }
       customDonationType = v;
+    } else {
+      customDonationType = null;
     }
 
     const payload: CreateDonationDto = {
       amount: this.cashAmount,
-      donationType,
-      customDonationType,
+      donationType: donationType,
+      customDonationType: customDonationType,
       referenceNo: null,
       remarks,
+      donationDate: this.cashDateStr, // ✅ this is what makes March stay March
     };
 
     this.isSaving = true;

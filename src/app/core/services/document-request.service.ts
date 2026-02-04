@@ -9,7 +9,7 @@ import { Documentrequest } from '../../shared/models/documentrequest';
 })
 export class DocumentRequestService {
 
-  // ✅ Matches backend: [Route("api/[controller]")] + DocumentRequestController
+  // ✅ Matches backend: [Route("api/[controller]")] DocumentRequestController
   private apiUrl = `${environment.apiUrl}/DocumentRequest`;
 
   constructor(private http: HttpClient) {}
@@ -28,12 +28,10 @@ export class DocumentRequestService {
   }
 
   getMy(): Observable<Documentrequest[]> {
-  return this.http.get<Documentrequest[]>(`${this.apiUrl}/my`, {
-    headers: this.getAuthHeaders()
-  });
-}
-
-
+    return this.http.get<Documentrequest[]>(`${this.apiUrl}/my`, {
+      headers: this.getAuthHeaders()
+    });
+  }
 
   getById(id: number): Observable<Documentrequest> {
     return this.http.get<Documentrequest>(`${this.apiUrl}/${id}`, {
@@ -60,20 +58,11 @@ export class DocumentRequestService {
     });
   }
 
-  // ✅ FIX: now matches backend endpoint: PUT /api/DocumentRequest/{id}/status
+  // ✅ Backend endpoint: PUT /api/DocumentRequest/{id}/status
   updateStatus(id: number, status: string): Observable<Documentrequest> {
     return this.http.put<Documentrequest>(
       `${this.apiUrl}/${id}/status`,
       { status },
-      { headers: this.getAuthHeaders() }
-    );
-  }
-
-  // optional: keep if some old code still uses it
-  markReady(id: number): Observable<Documentrequest> {
-    return this.http.put<Documentrequest>(
-      `${this.apiUrl}/${id}/mark-ready`,
-      {},
       { headers: this.getAuthHeaders() }
     );
   }

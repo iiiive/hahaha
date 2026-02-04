@@ -23,8 +23,8 @@ export class DonationService {
     return this.http.post<Donation>(this.baseUrl, dto);
   }
 
-  // ✅ FIX: allow partial payloads (amount, remarks only)
-  update(id: number, payload: Partial<Donation>): Observable<Donation> {
+  // ✅ works now because backend PUT exists
+  update(id: number, payload: any): Observable<Donation> {
     return this.http.put<Donation>(`${this.baseUrl}/${id}`, payload);
   }
 
