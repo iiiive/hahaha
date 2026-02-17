@@ -70,16 +70,30 @@
             </p>
           </div>
 
-          <div class="text-right">
-            <span
-              *ngIf="h.theme"
-              class="bg-purple-100 text-purple-800 text-xs font-bold px-2.5 py-1 rounded-full"
+          <div class="text-right flex items-start gap-2">
+            <div>
+              <span
+                *ngIf="h.theme"
+                class="bg-purple-100 text-purple-800 text-xs font-bold px-2.5 py-1 rounded-full"
+              >
+                {{ h.theme }}
+              </span>
+              <p *ngIf="h.scripture" class="text-xs text-gray-500 mt-1">
+                {{ h.scripture }}
+              </p>
+            </div>
+
+            <!-- ⭐ Bookmark (Users only) -->
+            <button
+              *ngIf="canUseBookmarks"
+              type="button"
+              class="px-3 py-1.5 text-xs rounded-full border bg-white hover:bg-gray-50"
+              (click)="toggleBookmark(h); $event.stopPropagation()"
+              [title]="isBookmarked(h) ? 'Remove bookmark' : 'Save bookmark'"
             >
-              {{ h.theme }}
-            </span>
-            <p *ngIf="h.scripture" class="text-xs text-gray-500 mt-1">
-              {{ h.scripture }}
-            </p>
+              <span *ngIf="isBookmarked(h)">★ Bookmarked</span>
+              <span *ngIf="!isBookmarked(h)">☆ Bookmark</span>
+            </button>
           </div>
         </div>
 
@@ -227,9 +241,22 @@
         {{ viewHomilyItem.date | date: 'MMMM d, y' }}
       </p>
 
-      <p class="text-sm font-medium text-purple-700">
-        {{ viewHomilyItem.scripture }}
-      </p>
+      <div class="flex items-center justify-between gap-3">
+        <p class="text-sm font-medium text-purple-700">
+          {{ viewHomilyItem.scripture }}
+        </p>
+
+        <!-- ⭐ Bookmark (Users only) -->
+        <button
+          *ngIf="canUseBookmarks"
+          type="button"
+          class="px-3 py-2 text-sm rounded-lg border bg-white hover:bg-gray-50"
+          (click)="toggleBookmark(viewHomilyItem)"
+        >
+          <span *ngIf="isBookmarked(viewHomilyItem)">★ Bookmarked</span>
+          <span *ngIf="!isBookmarked(viewHomilyItem)">☆ Bookmark</span>
+        </button>
+      </div>
 
       <div class="bg-purple-50 border-l-4 border-purple-500 p-4 rounded-r-lg">
         {{ viewHomilyItem.content }}

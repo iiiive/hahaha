@@ -1,4 +1,3 @@
-// src/app/app.routes.ts
 import { Routes } from '@angular/router';
 import { LoginComponent } from './modules/auth/login/login.component';
 
@@ -41,7 +40,7 @@ export const routes: Routes = [
       import('./modules/register/register.component').then((m) => m.RegisterComponent),
   },
 
-  // ✅ USER DASHBOARD (AUTH REQUIRED)  <-- FIXED
+  // ✅ USER DASHBOARD
   {
     path: 'user/dashboard',
     canActivate: [authGuard],
@@ -59,7 +58,7 @@ export const routes: Routes = [
       ),
   },
 
-  // ✅ USER ONLY (still just auth, your app controls UI by role)
+  // ✅ USER ONLY
   {
     path: 'online-giving',
     canActivate: [authGuard],
@@ -69,7 +68,7 @@ export const routes: Routes = [
       ),
   },
 
-  // ✅ ADMIN ONLY (Admin + SuperAdmin via adminGuard)
+  // ✅ ADMIN ONLY
   {
     path: 'users/create',
     canActivate: [authGuard, adminGuard],
@@ -81,6 +80,82 @@ export const routes: Routes = [
     canActivate: [authGuard, adminGuard],
     loadComponent: () =>
       import('./modules/donations/donations.component').then((m) => m.DonationsComponent),
+  },
+
+  // ✅ SETTINGS
+  {
+    path: 'settings/profile',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./modules/settings/profile-settings.component').then((m) => m.ProfileSettingsComponent),
+  },
+  {
+    path: 'settings/password',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./modules/settings/change-password.component').then((m) => m.ChangePasswordComponent),
+  },
+ {
+  path: 'settings/notifications',
+  canActivate: [authGuard],
+  loadComponent: () =>
+    import('./modules/settings/notification-preferences.component').then(
+      (m) => m.NotificationPreferencesComponent
+    ),
+},
+{
+  path: 'settings/notifications-list',
+  canActivate: [authGuard],
+  loadComponent: () =>
+    import('./modules/settings/notifications.component').then(
+      (m) => m.NotificationsComponent
+    ),
+},
+
+
+
+  {
+    path: 'settings/faqs',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./modules/settings/faqs.component').then((m) => m.FaqsComponent),
+  },
+  {
+    path: 'settings/contact-admin',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./modules/settings/contact-admin.component').then((m) => m.ContactAdminComponent),
+  },
+
+  // ✅ USER BOOKMARKS
+  {
+    path: 'word-of-god/bookmarks',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./modules/word-of-god/bookmarks.component').then((m) => m.BookmarksComponent),
+  },
+
+  // ✅ ADMIN AUDIT LOGS
+  {
+    path: 'admin/audit-logs',
+    canActivate: [authGuard, adminGuard],
+    loadComponent: () =>
+      import('./modules/admin/audit-logs.component').then((m) => m.AuditLogsComponent),
+  },
+
+  // ✅ ADMIN USERS (moved into admin tools sidebar)
+  {
+    path: 'admin/users',
+    canActivate: [authGuard, adminGuard],
+    loadComponent: () =>
+      import('./modules/admin/admin-users/admin-users.component').then((m) => m.AdminUsersComponent),
+  },
+  {
+    path: 'admin/users/pending',
+    canActivate: [authGuard, adminGuard],
+    data: { view: 'pending' },
+    loadComponent: () =>
+      import('./modules/admin/admin-users/admin-users.component').then((m) => m.AdminUsersComponent),
   },
 
   { path: '', redirectTo: 'login', pathMatch: 'full' },

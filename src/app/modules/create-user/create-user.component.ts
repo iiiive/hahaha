@@ -30,15 +30,14 @@ export class CreateUserComponent {
       lastName: ['', [Validators.required, Validators.maxLength(80)]],
       email: ['', [Validators.required, Validators.email, Validators.maxLength(120)]],
       password: ['', [Validators.required, Validators.minLength(6), Validators.maxLength(64)]],
-      roleId: [2, [Validators.required]], // default role id = 2 (change if needed)
+      roleId: [2, [Validators.required]],
+
+      // ✅ Add these UI fields (match DB)
       completeAddress: [''],
       phoneNumber: [''],
-      isApproved: [false],
-      status: ['Pending'],
     });
   }
 
-  // ✅ so template can use f['email'], f['password'], etc.
   get f() {
     return this.form.controls;
   }
@@ -62,16 +61,15 @@ export class CreateUserComponent {
 
     this.loading = true;
 
-    // ✅ map to DB-friendly payload
     const payload: CreateUserDto = {
       fullName: `${this.f['firstName'].value}`.trim() + ' ' + `${this.f['lastName'].value}`.trim(),
       email: `${this.f['email'].value}`.trim(),
       password: this.f['password'].value,
       roleId: Number(this.f['roleId'].value),
+
+      // ✅ new
       completeAddress: `${this.f['completeAddress'].value || ''}`.trim(),
       phoneNumber: `${this.f['phoneNumber'].value || ''}`.trim(),
-      isApproved: !!this.f['isApproved'].value,
-      status: `${this.f['status'].value || 'Pending'}`.trim(),
     };
 
     this.userService.createUser(payload).subscribe({

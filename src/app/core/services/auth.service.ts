@@ -49,6 +49,18 @@ export class AuthService {
     );
   }
 
+  // ✅ NEW: Register / Create Account (pending approval)
+  register(dto: {
+    fullName: string;
+    email: string;
+    password: string;
+    roleId: number;
+    completeAddress?: string | null;
+    phoneNumber?: string | null;
+  }) {
+    return this.api.post<any>('Auth/register', dto);
+  }
+
   logout() {
     localStorage.removeItem(this.tokenKey);
     localStorage.removeItem(this.roleKey);
@@ -87,14 +99,40 @@ export class AuthService {
     if (token) {
       const derived = this.normalizeRoleString(this.deriveRoleFromToken(token));
       if (derived) {
-        // keep storage synced (optional but helps)
         localStorage.setItem(this.roleKey, derived);
         return derived;
       }
     }
 
-    // fallback to localStorage if no token
     return this.normalizeRoleString(this.getRole());
+  }
+
+  // ✅ ADD: Used by BookmarkService to make per-user storage key
+  getUserId(): string | null {
+    const token = this.getToken();
+    if (!token) return null;
+
+    try {
+      const payload = this.decodeJwtPayload(token);
+      if (!payload) return null;
+
+      // Common claim keys
+      const nameId =
+        payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'] ??
+        payload['nameid'];
+
+      const sub = payload['sub'];
+
+      const fallback =
+        payload['userId'] ??
+        payload['userid'] ??
+        payload['id'];
+
+      const val = nameId ?? sub ?? fallback ?? null;
+      return val != null && String(val).trim() !== '' ? String(val) : null;
+    } catch {
+      return null;
+    }
   }
 
   // ----------------- helpers -----------------
@@ -114,11 +152,6 @@ export class AuthService {
     return '';
   }
 
-  /**
-   * ✅ Strong role derivation:
-   * 1) try role claim keys
-   * 2) if missing/incorrect, map roleId (1/2/3)
-   */
   private deriveRoleFromToken(token: string): string | null {
     try {
       const payload = this.decodeJwtPayload(token);

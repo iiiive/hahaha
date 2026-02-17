@@ -5,6 +5,7 @@ import { Amanu } from '../../../shared/models/amanu';
 import { AuthService } from '../../../core/services/auth.service';
 import { AmanuService } from '../../../core/services/amanu.service';
 import { ToastrService } from 'ngx-toastr';
+import { BookmarkItem, BookmarkService } from '../../../core/services/bookmark.service';
 
 @Component({
   selector: 'app-gospel',
@@ -18,11 +19,12 @@ export class GospelComponent implements OnInit, AfterViewInit, OnDestroy {
   gospels: Amanu[] = [];
   filteredGospels: Amanu[] = [];
 
-  showModal = false;          // form (add/edit) modal
+  showModal = false;
   modalType: 'homily' = 'homily';
   selectedYear: number | null = null;
   selectedMonth: number | null = null;
   isAdmin: boolean = false;
+
   themesList: string[] = ['Advent', 'Christmas', 'Epiphany', 'Lent', 'Easter', 'Pentecost', 'Ordinary Time'];
   years: number[] = [];
   months = [
@@ -34,30 +36,32 @@ export class GospelComponent implements OnInit, AfterViewInit, OnDestroy {
 
   editingId: number | null = null;
 
-  // --- REVIEW STATE ---
   isReviewing = false;
   reviewData: any = null;
 
-  // --- VIEW-ONLY MODAL STATE ---
   showViewModal = false;
   viewGospelItem: Amanu | null = null;
 
-  // ✅ INTERNAL SCROLL STATE (max ~3 visible)
   @ViewChild('gospelScroll') gospelScroll?: ElementRef<HTMLElement>;
   @ViewChildren('gospelItem') gospelItems?: QueryList<ElementRef<HTMLElement>>;
 
-  scrollMaxHeight = 520; // fallback until measured
+  scrollMaxHeight = 520;
   scrollAtTop = true;
   scrollAtBottom = false;
 
   private resizeObserver?: ResizeObserver;
   private itemsSub?: any;
 
+  // ✅ BOOKMARKS (per-user via service)
+  bookmarkedIds = new Set<string>();
+  canUseBookmarks = true;
+
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
     private amanuService: AmanuService,
-    private toastr: ToastrService
+    private toastr: ToastrService,
+    private bookmarkService: BookmarkService
   ) {
     this.isAdmin = this.authService.isAdmin();
   }
@@ -74,16 +78,14 @@ export class GospelComponent implements OnInit, AfterViewInit, OnDestroy {
       content: ['', Validators.required]
     });
 
+    this.canUseBookmarks = this.bookmarkService.canUseBookmarks();
+    this.refreshBookmarks();
     this.loadGospels();
   }
 
   ngAfterViewInit(): void {
-    // Watch changes of *ngFor items so we recalc height when filters change
-    this.itemsSub = this.gospelItems?.changes.subscribe(() => {
-      this.deferRecalcScrollBox();
-    });
+    this.itemsSub = this.gospelItems?.changes.subscribe(() => this.deferRecalcScrollBox());
 
-    // Watch size changes (window resize / layout changes)
     if (this.gospelScroll?.nativeElement && 'ResizeObserver' in window) {
       this.resizeObserver = new ResizeObserver(() => this.deferRecalcScrollBox());
       this.resizeObserver.observe(this.gospelScroll.nativeElement);
@@ -99,16 +101,12 @@ export class GospelComponent implements OnInit, AfterViewInit, OnDestroy {
 
   loadGospels() {
     this.amanuService.getAll().subscribe(data => {
-      // Filter only gospels
       this.gospels = data.filter(item => item.type === 'gospel');
-
-      // Clone into filtered list
       this.filteredGospels = [...this.gospels];
       this.populateYears();
       this.applyFilters();
-
-      // after data load, compute scroll height
       this.deferRecalcScrollBox();
+      this.refreshBookmarks();
     });
   }
 
@@ -128,7 +126,6 @@ export class GospelComponent implements OnInit, AfterViewInit, OnDestroy {
     this.deferRecalcScrollBox();
   }
 
-  /** Modal Management */
   addGospel() {
     if (!this.isAdmin) return alert('Please login as admin.');
     this.openModal();
@@ -165,8 +162,7 @@ export class GospelComponent implements OnInit, AfterViewInit, OnDestroy {
     this.reviewData = null;
 
     if (item) {
-      // edit mode
-      this.editingId = item.id;  // keep id outside form
+      this.editingId = item.id;
       this.modalForm.patchValue({
         type: 'gospel',
         title: item.title,
@@ -177,7 +173,6 @@ export class GospelComponent implements OnInit, AfterViewInit, OnDestroy {
         content: item.content
       });
     } else {
-      // add mode
       this.editingId = null;
       this.modalForm.reset({
         type: 'gospel',
@@ -198,7 +193,6 @@ export class GospelComponent implements OnInit, AfterViewInit, OnDestroy {
     this.reviewData = null;
   }
 
-  // --- VIEW-ONLY MODAL (for clicking a card) ---
   openViewGospel(item: Amanu) {
     this.viewGospelItem = item;
     this.showViewModal = true;
@@ -209,12 +203,11 @@ export class GospelComponent implements OnInit, AfterViewInit, OnDestroy {
     this.viewGospelItem = null;
   }
 
-  // --- OLD SAVE LOGIC (used by confirmAndSave) ---
   private persistGospel() {
     const formValue = this.modalForm.value;
 
     const gospel: Amanu = {
-      id: this.editingId ?? 0, // keep id separate
+      id: this.editingId ?? 0,
       type: 'gospel',
       title: formValue.title?.trim() || '',
       date: formValue.date,
@@ -222,16 +215,13 @@ export class GospelComponent implements OnInit, AfterViewInit, OnDestroy {
       scripture: formValue.scripture || null,
       reading: formValue.reading || '',
       content: formValue.content?.trim() || '',
-      createdBy: 'test-user',  // TODO: replace with logged-in user
+      createdBy: 'test-user',
       modifiedBy: 'test-user',
       createdAt: new Date().toISOString(),
       modifiedAt: new Date().toISOString()
     };
 
-    console.log('Saving gospel:', gospel);
-
     if (this.editingId) {
-      // Update existing gospel
       this.amanuService.update(this.editingId, gospel).subscribe({
         next: () => {
           this.toastr.success('Gospel updated successfully.');
@@ -244,7 +234,6 @@ export class GospelComponent implements OnInit, AfterViewInit, OnDestroy {
         }
       });
     } else {
-      // Create new gospel
       this.amanuService.create(gospel).subscribe({
         next: () => {
           this.toastr.success('Gospel created successfully.');
@@ -259,7 +248,6 @@ export class GospelComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  // --- REVIEW FLOW ---
   startReview() {
     if (this.modalForm.invalid) {
       this.toastr.warning('Please fill all required fields.');
@@ -295,11 +283,51 @@ export class GospelComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   // ==========================
+  // ✅ BOOKMARKS (SERVICE)
+  // ==========================
+  private makeBookmarkId(type: 'gospel' | 'homily', sourceId: number): string {
+    return `${type}:${sourceId}`;
+  }
+
+  private refreshBookmarks(): void {
+    const items = this.bookmarkService.getAll();
+    this.bookmarkedIds = new Set(items.map(x => x.id));
+  }
+
+  isBookmarked(g: Amanu): boolean {
+    const id = this.makeBookmarkId('gospel', g.id);
+    return this.bookmarkedIds.has(id);
+  }
+
+  toggleBookmark(g: Amanu, e?: Event): void {
+    e?.stopPropagation?.();
+
+    if (!this.canUseBookmarks) {
+      this.toastr.warning('Bookmarks are for users only.');
+      return;
+    }
+
+    const id = this.makeBookmarkId('gospel', g.id);
+
+    const item: BookmarkItem = {
+      id,
+      type: 'gospel',
+      title: g.title,
+      date: g.date,
+      verse: g.reading || '',
+      preview: this.getShortContent(g.content)
+    };
+
+    const saved = this.bookmarkService.toggle(item);
+    saved ? this.toastr.success('Saved to bookmarks.') : this.toastr.info('Removed bookmark.');
+
+    this.refreshBookmarks();
+  }
+
+  // ==========================
   // ✅ INTERNAL SCROLL HELPERS
   // ==========================
-
   private deferRecalcScrollBox(): void {
-    // allow DOM to paint after *ngFor changes
     setTimeout(() => {
       this.recalcScrollBoxMaxHeight();
       this.onScroll();
@@ -312,23 +340,17 @@ export class GospelComponent implements OnInit, AfterViewInit, OnDestroy {
     if (!scrollEl) return;
 
     if (items.length === 0) {
-      this.scrollMaxHeight = 220; // empty message
+      this.scrollMaxHeight = 220;
       return;
     }
 
-    // If fewer than 3, just fit them (no awkward big empty scroll)
     const n = Math.min(3, items.length);
-
-    // Compute height from first item top to nth item bottom (includes gaps naturally)
     const firstRect = items[0].getBoundingClientRect();
     const nthRect = items[n - 1].getBoundingClientRect();
 
     const contentHeight = Math.max(0, nthRect.bottom - firstRect.top);
-
-    // Add small buffer for padding/comfort
     const buffer = 16;
 
-    // Also clamp so it never becomes ridiculously small/large
     this.scrollMaxHeight = Math.max(260, Math.min(700, Math.round(contentHeight + buffer)));
   }
 
@@ -347,10 +369,8 @@ export class GospelComponent implements OnInit, AfterViewInit, OnDestroy {
     const el = this.gospelScroll?.nativeElement;
     if (!el) return;
 
-    const line = 56; // per arrow step
+    const line = 56;
     const page = Math.max(200, Math.floor(el.clientHeight * 0.9));
-
-    // Only handle keys that should scroll the list
     const key = e.key;
 
     if (key === 'ArrowDown') {
@@ -372,12 +392,10 @@ export class GospelComponent implements OnInit, AfterViewInit, OnDestroy {
       e.preventDefault();
       el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
     } else if (key === ' ' || key === 'Spacebar') {
-      // Space scrolls down like browsers, Shift+Space scrolls up
       e.preventDefault();
       el.scrollBy({ top: e.shiftKey ? -page : page, behavior: 'smooth' });
     }
 
-    // update fade state
     setTimeout(() => this.onScroll(), 80);
   }
 }

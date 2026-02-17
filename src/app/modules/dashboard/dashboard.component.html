@@ -1,66 +1,103 @@
-<!-- ✅ SUPERADMIN ONLY dashboard widgets -->
-<section *ngIf="isSuperAdmin" class="admin-users-card">
-  <div class="admin-users-header">
-    <h3>User Approvals</h3>
+<main class="dash-wrap">
+  <!-- ✅ ADMIN/SUPERADMIN: Today Updates -->
+  <section *ngIf="canSeeTodayUpdates" class="today-card">
 
-    <div class="tabs">
-      <button type="button" class="tab tab-purple active">
-        Pending
-      </button>
+    <!-- ✅ Announcements (framed banner like user UI) -->
+    <section class="banner-card">
+      <div class="banner-head">
+        <div class="banner-left">
+          <h3 class="banner-title">Announcements</h3>
+          <span class="banner-sub">Latest updates from the church</span>
+        </div>
+
+        <button
+          *ngIf="canManageBanners"
+          class="pill"
+          type="button"
+          (click)="loadBanners()"
+          [disabled]="bannerLoading || bannerUploading">
+          Refresh Banners
+        </button>
+      </div>
+
+      <!-- ✅ CENTERED + FRAMED -->
+      <div class="banner-shell">
+        <div class="banner-frame">
+          <app-banner-carousel
+            [images]="bannerUrls"
+            [canUpload]="canManageBanners"
+            [uploading]="bannerUploading"
+            (uploadConfirmed)="uploadBannerFile($event)">
+          </app-banner-carousel>
+        </div>
+      </div>
+
+      <div class="muted small" *ngIf="bannerLoading">Loading banners...</div>
+      <div class="error small" *ngIf="bannerError">{{ bannerError }}</div>
+      <div class="ok small" *ngIf="bannerUploadMsg">{{ bannerUploadMsg }}</div>
+      <div class="error small" *ngIf="bannerUploadErr">{{ bannerUploadErr }}</div>
+
+      <!-- ✅ poster-style list (only for Admin/SuperAdmin) -->
+      <div class="poster-strip" *ngIf="canManageBanners && !bannerLoading && banners?.length">
+        <div class="poster" *ngFor="let b of banners">
+          <img class="poster-img" [src]="b.fullUrl" alt="banner poster" />
+          <button
+            type="button"
+            class="poster-del"
+            (click)="deleteBanner(b.id)"
+            [disabled]="bannerDeletingId === b.id">
+            {{ bannerDeletingId === b.id ? 'Deleting...' : 'Delete' }}
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ✅ Today header -->
+    <div class="today-header">
+      <div>
+        <h3>Today Updates</h3>
+        <div class="muted">Updates for today (Manila time)</div>
+      </div>
+
+      <div class="today-actions">
+        <select class="today-filter" [(ngModel)]="todayFilter" (change)="setTodayFilter(todayFilter)">
+          <option value="All">All</option>
+          <option value="Donation">Donations</option>
+          <option value="Scheduling">Scheduling</option>
+          <option value="Documents">Documents</option>
+        </select>
+
+        <button type="button" class="btn btn-purple-outline" (click)="refreshToday()">
+          Refresh
+        </button>
+      </div>
     </div>
-  </div>
 
-  <div *ngIf="loadingUsers" class="muted">Loading users...</div>
-  <div *ngIf="usersError" class="error">{{ usersError }}</div>
+    <div *ngIf="todayLoading" class="muted">Loading today updates...</div>
+    <div *ngIf="todayError" class="error">{{ todayError }}</div>
 
-  <table *ngIf="!loadingUsers && users.length" class="users-table">
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Email</th>
-        <th>Role</th>
-        <th>Status</th>
-        <th style="width: 220px;">Actions</th>
-      </tr>
-    </thead>
+    <div *ngIf="!todayLoading && !todayError && !filteredTodayItems.length" class="muted">
+      No updates today.
+    </div>
 
-    <tbody>
-      <tr *ngFor="let u of users">
-        <td>{{ u.fullName }}</td>
-        <td>{{ u.email }}</td>
-        <td>{{ roleName(u.roleId) }}</td>
+    <div *ngIf="!todayLoading && !todayError && filteredTodayItems.length" class="today-scroll">
+      <div class="today-list">
+        <div class="today-row" *ngFor="let it of filteredTodayItems">
+          <span class="pill" [ngClass]="badgeClass(it.type)">{{ it.type }}</span>
 
-        <td>
-          <span class="pill pill-muted">
-            {{ u.status || 'Pending' }}
-          </span>
-        </td>
+          <div class="today-main">
+            <div class="today-title">
+              <strong>{{ displayName(it) }}</strong>
+              <span class="muted">• {{ it.title }}</span>
+            </div>
 
-        <td class="actions">
-          <button
-            class="btn btn-purple-outline"
-            type="button"
-            (click)="approve(u)"
-          >
-            Approve
-          </button>
+            <div class="today-sub muted">
+              {{ formatWhen(it.createdAt) }}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
-          <button
-            class="btn btn-purple-soft"
-            type="button"
-            (click)="decline(u)"
-          >
-            Decline
-          </button>
-        </td>
-      </tr>
-    </tbody>
-  </table>
-
-  <div *ngIf="!loadingUsers && !users.length" class="muted">
-    No pending users.
-  </div>
-</section>
-
-<!-- ✅ ADMIN DASHBOARD = intentionally empty -->
-<!-- (no section needed; admin will simply see a blank dashboard) -->
+  </section>
+</main>

@@ -1,116 +1,92 @@
-/* =========================================
-   ADMIN USERS (APPROVALS) — CLEAN PURPLE THEME
-   Put this inside the component .scss
-========================================= */
-
 :host {
-  /* theme vars (component-safe, no :root needed) */
-  --purple: #6f6ad8;
-  --purple-dark: #5c57c9;
-  --purple-soft: rgba(111, 106, 216, 0.12);
-
-  --text: #1f2937;
-  --muted: #6b7280;
-  --border: #e9e9e9;
-  --row: #fafafa;
+  display: block;
 }
 
-/* ===== Card ===== */
-.admin-users-card {
+/* ✅ forces everything to stay centered like your other pages */
+.dash-wrap {
+  width: 100%;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+/* ============ Admin Today Updates ============ */
+.today-card {
   background: #fff;
-  border: 1px solid var(--border);
+  border: 1px solid #e9e9e9;
   border-radius: 14px;
   padding: 18px 20px;
-  margin-top: 16px;
+  margin: 16px auto 0;          /* ✅ center it */
+  max-width: 1100px;            /* ✅ prevent stretch */
+  width: 100%;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
 }
 
-/* ===== Header ===== */
-.admin-users-header {
+.today-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 
   h3 {
     margin: 0;
     font-size: 18px;
-    font-weight: 700;
-    color: var(--text);
+    font-weight: 800;
+    color: #1f2937;
   }
 }
 
-/* ===== Tabs ===== */
-.tabs {
+.today-actions {
   display: flex;
-  gap: 8px;
+  align-items: center;
+  gap: 10px;
 }
 
-.tab {
-  padding: 6px 14px;
-  border-radius: 999px;
-  border: 1px solid transparent;
-  background: transparent;
-  font-size: 12px;
+.today-filter {
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  padding: 7px 10px;
+  font-size: 13px;
   font-weight: 700;
-  color: var(--muted);
-  cursor: default;
+  color: #374151;
+  background: #fff;
+  outline: none;
 }
 
-/* your HTML uses: class="tab active" */
-.tab.active {
-  background: var(--purple);
-  color: #fff;
-  border-color: var(--purple);
-  box-shadow: 0 4px 10px rgba(111, 106, 216, 0.25);
+.today-scroll {
+  max-height: 420px;
+  overflow: auto;
+  padding-right: 6px;
 }
 
-/* ===== Table ===== */
-.users-table {
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 0 10px;
+.today-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
-/* head */
-.users-table thead th {
-  padding: 10px 12px;
-  text-align: left;
-  font-size: 11px;
-  font-weight: 800;
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-/* rows */
-.users-table tbody tr {
-  background: var(--row);
-}
-
-.users-table tbody td {
+.today-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: #fbfbfd;
+  border: 1px solid #f0f0f0;
+  border-radius: 12px;
   padding: 12px;
+}
+
+.today-main { flex: 1; min-width: 0; }
+
+.today-title {
   font-size: 13px;
   color: #374151;
-  vertical-align: middle;
-  border-top: 1px solid #f0f0f0;
-  border-bottom: 1px solid #f0f0f0;
+
+  strong { font-weight: 900; color: #111827; }
 }
 
-.users-table tbody tr td:first-child {
-  border-left: 1px solid #f0f0f0;
-  border-top-left-radius: 12px;
-  border-bottom-left-radius: 12px;
-}
+.today-sub { margin-top: 4px; font-size: 12px; color: #6b7280; }
 
-.users-table tbody tr td:last-child {
-  border-right: 1px solid #f0f0f0;
-  border-top-right-radius: 12px;
-  border-bottom-right-radius: 12px;
-}
-
-/* ===== Status pill ===== */
 .pill {
   display: inline-flex;
   align-items: center;
@@ -119,20 +95,28 @@
   border-radius: 999px;
   border: 1px solid #ddd;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 800;
   background: #f6f6f8;
   color: #555;
+  white-space: nowrap;
 }
 
-/* ===== Actions layout ===== */
-.actions {
-  display: flex;
-  gap: 8px;
-  justify-content: flex-start;
-  align-items: center;
+.pill-purple {
+  background: rgba(111, 106, 216, 0.14);
+  color: #5c57c9;
+  border-color: rgba(111, 106, 216, 0.28);
+}
+.pill-indigo {
+  background: rgba(99, 102, 241, 0.14);
+  color: #3730a3;
+  border-color: rgba(99, 102, 241, 0.28);
+}
+.pill-green {
+  background: rgba(16, 185, 129, 0.14);
+  color: #065f46;
+  border-color: rgba(16, 185, 129, 0.25);
 }
 
-/* ===== Buttons (purple theme) ===== */
 .btn {
   padding: 7px 12px;
   border-radius: 10px;
@@ -144,43 +128,127 @@
   transition: all 0.2s ease;
 }
 
-/* Approve — purple outline */
-.btn.approve {
+.btn-purple-outline {
   background: #fff;
-  border-color: var(--purple);
-  color: var(--purple);
+  border-color: #6f6ad8;
+  color: #6f6ad8;
+}
+.btn-purple-outline:hover {
+  background: rgba(111, 106, 216, 0.12);
 }
 
-.btn.approve:hover {
-  background: var(--purple-soft);
+.muted { color: #6b7280; font-size: 13px; margin-top: 8px; }
+.error { color: #c0362c; font-size: 13px; margin-top: 8px; }
+.ok { color: #0a7a2f; font-weight: 800; }
+
+/* ==========================
+   ✅ ANNOUNCEMENTS BANNER (match USER formatting)
+========================== */
+.banner-card {
+  margin-bottom: 14px;
 }
 
-/* Decline — soft purple fill */
-.btn.decline {
-  background: var(--purple-soft);
-  color: var(--purple-dark);
-  border-color: transparent;
+.banner-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 }
 
-.btn.decline:hover {
-  background: rgba(111, 106, 216, 0.18);
+.banner-left {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
-/* Disabled */
-.btn:disabled {
-  opacity: 0.55;
+.banner-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 900;
+  color: #111827;
+}
+
+.banner-sub {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.banner-shell {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.banner-frame {
+  width: 100%;
+  max-width: 920px;
+  border: 1px solid #e9e9e9;
+  border-radius: 14px;
+  background: #fbfbfd;
+  padding: 12px;
+  margin-top: 10px;
+  box-shadow: inset 0 0 0 1px rgba(111,106,216,.08);
+  height: 310px;
+  overflow: hidden;
+}
+
+/* ✅ ensure carousel fits the frame */
+:host ::ng-deep .banner-frame app-banner-carousel {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+:host ::ng-deep .banner-frame img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 12px;
+}
+
+/* ==========================
+   ✅ Admin delete thumbnails (poster strip)
+========================== */
+.poster-strip {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+  justify-content: center;
+}
+
+.poster {
+  width: 180px;
+  border: 1px solid #eee;
+  border-radius: 12px;
+  background: #fff;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+}
+
+.poster-img {
+  width: 100%;
+  height: 72px;
+  object-fit: contain;
+  border-radius: 10px;
+  background: transparent;
+}
+
+.poster-del {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(220, 38, 38, 0.45);
+  background: rgba(220, 38, 38, 0.08);
+  color: #b91c1c;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.poster-del:disabled {
+  opacity: 0.6;
   cursor: not-allowed;
-}
-
-/* ===== Text helpers ===== */
-.muted {
-  color: var(--muted);
-  font-size: 13px;
-  margin-top: 8px;
-}
-
-.error {
-  color: #c0362c;
-  font-size: 13px;
-  margin-top: 8px;
 }

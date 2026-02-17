@@ -4,10 +4,99 @@
     {{ error }}
   </section>
 
+  <!-- ✅ NOTIFICATIONS (In-app)
+       Show ONLY if:
+       - loading OR error OR has unread notifications
+       Hide completely when there are truly no unread notifications and no error.
+  -->
+  <section
+    class="banner-card"
+    *ngIf="notifOpen && (notifLoading || !!notifError || (notifications?.length || 0) > 0)"
+  >
+    <div class="banner-head">
+      <h3 class="banner-title">
+        Notifications
+        <span *ngIf="unreadCount" class="pill" style="margin-left:8px;background:#7C3AED;color:#fff;">
+          {{ unreadCount }} new
+        </span>
+      </h3>
+
+      <div class="right-tools" style="display:flex;gap:8px;align-items:center;">
+        <button class="pill" type="button" (click)="loadNotifications()">Refresh</button>
+
+        <button
+          class="pill"
+          type="button"
+          (click)="markAllNotificationsRead()"
+          *ngIf="!notifLoading && (notifications?.length || 0) > 0"
+        >
+          Mark all read
+        </button>
+      </div>
+    </div>
+
+    <div class="card-body" style="padding:12px 16px;">
+      <div *ngIf="notifLoading" class="muted small">Loading notifications...</div>
+      <div *ngIf="notifError" class="error-card">{{ notifError }}</div>
+
+      <!-- Only show empty message if card is visible and truly empty after loading + no error -->
+      <div *ngIf="!notifLoading && !notifError && !(notifications?.length || 0)" class="empty muted">
+        No new notifications.
+      </div>
+
+      <div
+        *ngIf="!notifLoading && (notifications?.length || 0) > 0"
+        class="list fade-scroll"
+        style="max-height:220px;overflow:auto;"
+      >
+        <div class="row" *ngFor="let n of notifications; trackBy: trackByNotifId">
+          <div class="row-left">
+            <div class="strong">{{ n.title }}</div>
+            <div class="muted small">{{ n.message }}</div>
+          </div>
+
+          <div class="row-right" style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
+            <button
+              type="button"
+              class="pill outline-purple"
+              (click)="markNotifRead(n)"
+              [disabled]="markingNotifId === n.notificationId"
+              style="border:1px solid #7C3AED;color:#7C3AED;background:transparent;"
+            >
+              {{ markingNotifId === n.notificationId ? 'Marking...' : 'Mark read' }}
+            </button>
+
+            <div class="muted small">{{ fmtDate(n.createdAt) }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ✅ Announcements (framed banner) -->
+  <section class="banner-card" *ngIf="bannerUrls?.length">
+    <div class="banner-head">
+      <h3 class="banner-title">Announcements</h3>
+      <span class="banner-sub">Latest updates from the church</span>
+    </div>
+
+    <div class="banner-frame">
+      <app-banner-carousel [images]="bannerUrls"></app-banner-carousel>
+    </div>
+  </section>
+
+  <!-- ✅ GRID -->
   <section class="grid">
-    <!-- ONLINE GIVING -->
+
+    <!-- ✅ ONLINE GIVING (COLLAPSIBLE) -->
     <div class="card">
-      <div class="card-head">
+      <div
+        class="card-head clickable"
+        (click)="toggle('donations')"
+        [attr.aria-expanded]="open.donations"
+        role="button"
+        tabindex="0"
+      >
         <div class="head-row">
           <div>
             <div class="card-title">Online Giving</div>
@@ -17,51 +106,58 @@
             </div>
           </div>
 
-          <button
-            *ngIf="(data.donations.recent?.length || 0) > limit"
-            type="button"
-            class="view-all-btn"
-            (click)="toggleViewAll('donations')"
-            [attr.aria-expanded]="expanded.donations"
-          >
-            {{ expanded.donations ? 'Compact' : 'View All' }}
-          </button>
+          <div class="right-tools">
+            <span class="pill">{{ open.donations ? 'Open' : 'Hidden' }}</span>
+            <span class="chev" [class.open]="open.donations">▾</span>
+          </div>
         </div>
       </div>
 
+      <!-- ✅ SMOOTH DROPDOWN WRAPPER -->
       <div
-        class="list fade-scroll"
-        [class.scroll-5]="!expanded.donations"
-        [class.scroll-all]="expanded.donations"
-        *ngIf="data.donations.recent?.length; else noDonations"
-        tabindex="0"
-        (focus)="activePanel = 'donations'"
-        #donationsList
+        class="card-body"
+        [style.maxHeight]="open.donations ? '300px' : '0px'"
+        [style.padding]="open.donations ? '12px 16px' : '0px 16px'"
+        style="overflow:hidden;transition:max-height .25s ease, padding .25s ease;"
       >
-        <div class="row" *ngFor="let x of data.donations.recent">
-          <div class="row-left">
-            <div class="strong">{{ donationTypeLabel(x) }}</div>
-            <div class="muted small">
-              Reference No.: {{ get(x,'referenceNo') || get(x,'ReferenceNo') || '—' }}
+        <div
+          class="list fade-scroll scroll-5"
+          *ngIf="open.donations && data.donations.recent?.length; else noDonations"
+          tabindex="0"
+          (focus)="activePanel = 'donations'"
+          #donationsList
+        >
+          <div class="row" *ngFor="let x of data.donations.recent">
+            <div class="row-left">
+              <div class="strong">{{ donationTypeLabel(x) }}</div>
+              <div class="muted small">
+                Reference No.: {{ get(x,'referenceNo') || get(x,'ReferenceNo') || '—' }}
+              </div>
             </div>
-          </div>
-          <div class="row-right">
-            <div class="strong">₱{{ money(get(x,'amount') || get(x,'Amount')) }}</div>
-            <div class="muted small">
-              {{ fmtDate(get(x,'createdAt') || get(x,'CreatedAt')) }}
+            <div class="row-right">
+              <div class="strong">₱{{ money(get(x,'amount') || get(x,'Amount')) }}</div>
+              <div class="muted small">
+                {{ fmtDate(get(x,'createdAt') || get(x,'CreatedAt')) }}
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <ng-template #noDonations>
-        <div class="empty muted">No recent donations available.</div>
-      </ng-template>
+        <ng-template #noDonations>
+          <div *ngIf="open.donations" class="empty muted">No recent donations available.</div>
+        </ng-template>
+      </div>
     </div>
 
-    <!-- DOCUMENT REQUESTS -->
+    <!-- ✅ DOCUMENT REQUESTS (COLLAPSIBLE) -->
     <div class="card">
-      <div class="card-head">
+      <div
+        class="card-head clickable"
+        (click)="toggle('documents')"
+        [attr.aria-expanded]="open.documents"
+        role="button"
+        tabindex="0"
+      >
         <div class="head-row">
           <div>
             <div class="card-title">Document Requests</div>
@@ -70,62 +166,64 @@
             </div>
           </div>
 
-          <button
-            *ngIf="(data.documents.recent?.length || 0) > limit"
-            type="button"
-            class="view-all-btn"
-            (click)="toggleViewAll('documents')"
-            [attr.aria-expanded]="expanded.documents"
-          >
-            {{ expanded.documents ? 'Compact' : 'View All' }}
-          </button>
+          <div class="right-tools">
+            <span class="pill">{{ open.documents ? 'Open' : 'Hidden' }}</span>
+            <span class="chev" [class.open]="open.documents">▾</span>
+          </div>
         </div>
       </div>
 
+      <!-- ✅ SMOOTH DROPDOWN WRAPPER -->
       <div
-        class="list fade-scroll"
-        [class.scroll-5]="!expanded.documents"
-        [class.scroll-all]="expanded.documents"
-        *ngIf="data.documents.recent?.length; else noDocs"
-        tabindex="0"
-        (focus)="activePanel = 'documents'"
-        #documentsList
+        class="card-body"
+        [style.maxHeight]="open.documents ? '300px' : '0px'"
+        [style.padding]="open.documents ? '12px 16px' : '0px 16px'"
+        style="overflow:hidden;transition:max-height .25s ease, padding .25s ease;"
       >
-        <div class="row" *ngFor="let r of data.documents.recent">
-          <div class="row-left">
-            <div class="strong">
-              {{ get(r,'documentType') || get(r,'DocumentType') || 'Document' }}
+        <div
+          class="list fade-scroll scroll-5"
+          *ngIf="open.documents && data.documents.recent?.length; else noDocs"
+          tabindex="0"
+          (focus)="activePanel = 'documents'"
+          #documentsList
+        >
+          <div class="row" *ngFor="let r of data.documents.recent">
+            <div class="row-left">
+              <div class="strong">
+                {{ get(r,'documentType') || get(r,'DocumentType') || 'Document' }}
+              </div>
+              <div class="muted small">
+                Number of Copies:
+                {{ get(r,'numberOfCopies') || get(r,'NumberOfCopies') || '—' }}
+              </div>
             </div>
-            <div class="muted small">
-              Number of Copies:
-              {{ get(r,'numberOfCopies') || get(r,'NumberOfCopies') || '—' }}
-            </div>
-          </div>
 
-          <div class="row-right">
-            <div
-              class="pill"
-              [class.ready]="(get(r,'status') || get(r,'Status')) === 'ReadyForPickup'"
-              [class.claimed]="(get(r,'status') || get(r,'Status')) === 'Claimed'"
-              [class.rejected]="(get(r,'status') || get(r,'Status')) === 'Rejected'"
-            >
-              {{ (get(r,'status') || get(r,'Status')) || 'Pending' }}
-            </div>
-            <div class="muted small">
-              {{ fmtDate(get(r,'createdAt') || get(r,'CreatedAt')) }}
+            <div class="row-right">
+              <div class="pill">
+                {{ (get(r,'status') || get(r,'Status')) || 'Pending' }}
+              </div>
+              <div class="muted small">
+                {{ fmtDate(get(r,'createdAt') || get(r,'CreatedAt')) }}
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <ng-template #noDocs>
-        <div class="empty muted">No document requests found.</div>
-      </ng-template>
+        <ng-template #noDocs>
+          <div *ngIf="open.documents" class="empty muted">No document requests found.</div>
+        </ng-template>
+      </div>
     </div>
 
-    <!-- SCHEDULING -->
+    <!-- ✅ SERVICE SCHEDULING (COLLAPSIBLE) -->
     <div class="card">
-      <div class="card-head">
+      <div
+        class="card-head clickable"
+        (click)="toggle('scheduling')"
+        [attr.aria-expanded]="open.scheduling"
+        role="button"
+        tabindex="0"
+      >
         <div class="head-row">
           <div>
             <div class="card-title">Service Scheduling</div>
@@ -134,52 +232,54 @@
             </div>
           </div>
 
-          <button
-            *ngIf="(data.scheduling.recent?.length || 0) > limit"
-            type="button"
-            class="view-all-btn"
-            (click)="toggleViewAll('scheduling')"
-            [attr.aria-expanded]="expanded.scheduling"
-          >
-            {{ expanded.scheduling ? 'Compact' : 'View All' }}
-          </button>
+          <div class="right-tools">
+            <span class="pill">{{ open.scheduling ? 'Open' : 'Hidden' }}</span>
+            <span class="chev" [class.open]="open.scheduling">▾</span>
+          </div>
         </div>
       </div>
 
+      <!-- ✅ SMOOTH DROPDOWN WRAPPER -->
       <div
-        class="list fade-scroll"
-        [class.scroll-5]="!expanded.scheduling"
-        [class.scroll-all]="expanded.scheduling"
-        *ngIf="data.scheduling.recent?.length; else noSched"
-        tabindex="0"
-        (focus)="activePanel = 'scheduling'"
-        #schedulingList
+        class="card-body"
+        [style.maxHeight]="open.scheduling ? '300px' : '0px'"
+        [style.padding]="open.scheduling ? '12px 16px' : '0px 16px'"
+        style="overflow:hidden;transition:max-height .25s ease, padding .25s ease;"
       >
-        <div class="row" *ngFor="let s of data.scheduling.recent">
-          <div class="row-left">
-            <div class="strong">
-              {{ get(s,'serviceType') || get(s,'ServiceType') || 'Service' }}
+        <div
+          class="list fade-scroll scroll-5"
+          *ngIf="open.scheduling && data.scheduling.recent?.length; else noSched"
+          tabindex="0"
+          (focus)="activePanel = 'scheduling'"
+          #schedulingList
+        >
+          <div class="row" *ngFor="let s of data.scheduling.recent">
+            <div class="row-left">
+              <div class="strong">
+                {{ get(s,'serviceType') || get(s,'ServiceType') || 'Service' }}
+              </div>
+              <div class="muted small">
+                {{ fmtDate(get(s,'serviceDate') || get(s,'ServiceDate')) }}
+                • {{ get(s,'serviceTime') || get(s,'ServiceTime') || '' }}
+              </div>
             </div>
-            <div class="muted small">
-              {{ fmtDate(get(s,'serviceDate') || get(s,'ServiceDate')) }}
-              • {{ get(s,'serviceTime') || get(s,'ServiceTime') || '' }}
-            </div>
-          </div>
 
-          <div class="row-right">
-            <div class="pill">
-              {{ get(s,'status') || get(s,'Status') || '—' }}
-            </div>
-            <div class="muted small">
-              {{ fmtDate(get(s,'createdAt') || get(s,'CreatedAt')) }}
+            <div class="row-right">
+              <div class="pill">
+                {{ get(s,'status') || get(s,'Status') || '—' }}
+              </div>
+              <div class="muted small">
+                {{ fmtDate(get(s,'createdAt') || get(s,'CreatedAt')) }}
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <ng-template #noSched>
-        <div class="empty muted">No scheduled services available.</div>
-      </ng-template>
+        <ng-template #noSched>
+          <div *ngIf="open.scheduling" class="empty muted">No scheduled services available.</div>
+        </ng-template>
+      </div>
     </div>
+
   </section>
 </main>

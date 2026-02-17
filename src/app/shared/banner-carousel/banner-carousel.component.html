@@ -1,0 +1,95 @@
+<div class="carousel-shell">
+
+  <!-- ✅ Upload tools INSIDE carousel UI (Admin/SuperAdmin only) -->
+  <div class="tools" *ngIf="canUpload">
+    <div class="tools-left">
+      <button
+        type="button"
+        class="pill"
+        (click)="openFilePicker(fileInput)"
+        [disabled]="uploading">
+        {{ uploading ? 'Uploading...' : 'Choose Banner' }}
+      </button>
+
+      <span class="muted small">
+        Choose → Review → Upload
+      </span>
+    </div>
+
+    <input
+      #fileInput
+      type="file"
+      accept="image/*"
+      class="file-hidden"
+      (change)="onFileSelected($event)" />
+  </div>
+
+  <!-- ✅ Frame -->
+  <div class="frame" [class.empty]="!hasImages">
+    <ng-container *ngIf="hasImages; else emptyTpl">
+
+      <div class="track" [style.transform]="'translateX(-' + (index * 100) + '%)'">
+        <div class="slide" *ngFor="let img of images">
+          <img class="img" [src]="img" alt="banner" />
+        </div>
+      </div>
+
+      <!-- nav -->
+      <button type="button" class="nav prev" (click)="prev()" aria-label="Previous">‹</button>
+      <button type="button" class="nav next" (click)="next()" aria-label="Next">›</button>
+
+      <!-- dots -->
+      <div class="dots">
+        <button
+          type="button"
+          class="dot"
+          *ngFor="let _ of images; let i = index"
+          [class.active]="i === index"
+          (click)="go(i)"
+          aria-label="Go to slide">
+        </button>
+      </div>
+
+    </ng-container>
+
+    <ng-template #emptyTpl>
+      <div class="empty-state">
+        <div class="title">No announcements yet</div>
+        <div class="sub">Upload a banner to show announcements here.</div>
+      </div>
+    </ng-template>
+  </div>
+
+  <!-- ✅ Review Modal (WIDER) -->
+  <div class="modal-backdrop" *ngIf="reviewOpen">
+    <div class="modal" role="dialog" aria-modal="true">
+      <div class="modal-head">
+        <div>
+          <div class="modal-title">Review Banner</div>
+          <div class="modal-sub">Make sure it looks correct before uploading.</div>
+        </div>
+
+        <button type="button" class="icon-btn" (click)="closeReview()" aria-label="Close">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="preview-frame">
+          <img *ngIf="previewUrl" [src]="previewUrl" alt="preview" />
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn ghost" (click)="closeReview()">Cancel</button>
+
+        <button
+          type="button"
+          class="btn primary"
+          (click)="confirmUpload()"
+          [disabled]="uploading || !selectedFile">
+          Upload Banner
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>

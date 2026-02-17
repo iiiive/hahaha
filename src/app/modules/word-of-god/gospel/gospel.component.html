@@ -13,7 +13,7 @@
                focus:outline-none focus:ring-2 focus:ring-purple-600"
       >
         <option [ngValue]="null">All Years</option>
-        <option *ngFor="let y of [2023, 2024, 2025]" [ngValue]="y">{{ y }}</option>
+        <option *ngFor="let y of years" [ngValue]="y">{{ y }}</option>
       </select>
 
       <!-- Month Filter -->
@@ -62,9 +62,24 @@
             <p class="text-sm text-gray-500">{{ g.date | date: 'MMMM d, y' }}</p>
           </div>
 
-          <span class="bg-purple-100 text-purple-800 text-xs font-bold px-2.5 py-1 rounded-full">
-            {{ g.reading }}
-          </span>
+          <div class="flex items-start gap-2">
+            <span class="bg-purple-100 text-purple-800 text-xs font-bold px-2.5 py-1 rounded-full">
+              {{ g.reading }}
+            </span>
+
+            <!-- ⭐ Bookmark (Users only) -->
+            <button
+              *ngIf="canUseBookmarks"
+              type="button"
+              class="px-3 py-1.5 text-xs rounded-full border bg-white hover:bg-gray-50"
+              (click)="toggleBookmark(g); $event.stopPropagation()"
+              [title]="isBookmarked(g) ? 'Remove bookmark' : 'Save bookmark'"
+            >
+              <span *ngIf="isBookmarked(g)">★ Bookmarked</span>
+              <span *ngIf="!isBookmarked(g)">☆ Bookmark</span>
+            </button>
+
+          </div>
         </div>
 
         <div class="bg-purple-50 border-l-4 border-purple-500 p-4 rounded-r-lg mb-3">
@@ -237,7 +252,7 @@
   </div>
 </div>
 
-<!-- VIEW-ONLY GOSPEL MODAL (when clicking a card) -->
+<!-- VIEW-ONLY GOSPEL MODAL -->
 <div *ngIf="showViewModal && viewGospelItem" class="fixed inset-0 z-40 bg-black/50 flex items-center justify-center p-4">
   <div class="bg-white w-full max-w-xl rounded-xl shadow-xl border border-purple-100">
     <div class="px-5 py-4 border-b flex justify-between items-center">
@@ -252,9 +267,22 @@
         {{ viewGospelItem.date | date: 'MMMM d, y' }}
       </p>
 
-      <p class="text-sm font-medium text-purple-700" *ngIf="viewGospelItem.reading">
-        {{ viewGospelItem.reading }}
-      </p>
+      <div class="flex items-center justify-between gap-3">
+        <p class="text-sm font-medium text-purple-700" *ngIf="viewGospelItem.reading">
+          {{ viewGospelItem.reading }}
+        </p>
+
+        <!-- ⭐ Bookmark (Users only) -->
+        <button
+          *ngIf="canUseBookmarks"
+          type="button"
+          class="px-3 py-2 text-sm rounded-lg border bg-white hover:bg-gray-50"
+          (click)="toggleBookmark(viewGospelItem)"
+        >
+          <span *ngIf="isBookmarked(viewGospelItem)">★ Bookmarked</span>
+          <span *ngIf="!isBookmarked(viewGospelItem)">☆ Bookmark</span>
+        </button>
+      </div>
 
       <div class="mt-2 text-gray-800 text-sm whitespace-pre-wrap leading-relaxed bg-purple-50 border-l-4 border-purple-500 p-4 rounded-r-lg">
         {{ viewGospelItem.content }}

@@ -1,0 +1,170 @@
+<main class="page">
+  <section class="card">
+    <div class="head">
+      <div>
+        <h2 class="title">
+          {{ viewMode === 'pending' ? 'User Approvals (Pending)' : 'Users' }}
+        </h2>
+        <p class="sub">
+          {{ viewMode === 'pending'
+              ? 'Approve or decline pending accounts.'
+              : 'View users and send donation invites (approved users only).' }}
+        </p>
+      </div>
+
+      <div class="tools">
+        <button class="btn" (click)="load()" [disabled]="loading">Refresh</button>
+
+        <button *ngIf="viewMode==='all'" class="btn purple" (click)="inviteAllUsers()" [disabled]="loading">
+          Invite All Users
+        </button>
+      </div>
+    </div>
+
+    <!-- ✅ SUPERADMIN: separate tabs -->
+    <div *ngIf="isSuperAdmin && viewMode==='all'" class="tabs">
+      <button class="tab" [class.active]="activeTab==='users'" (click)="activeTab='users'">
+        Users ({{ users.length }})
+      </button>
+      <button class="tab" [class.active]="activeTab==='admins'" (click)="activeTab='admins'">
+        Admins ({{ admins.length }})
+      </button>
+    </div>
+
+    <div class="table-wrap" *ngIf="!loading; else loadingTpl">
+      <table class="table" *ngIf="all.length; else emptyTpl">
+
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th *ngIf="isSuperAdmin && viewMode==='all'">Role</th>
+            <th>Status</th>
+            <th>Created</th>
+            <th class="right">Actions</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <ng-container *ngIf="viewMode==='pending'">
+            <tr *ngFor="let u of all">
+              <td>{{ u.fullName }}</td>
+              <td>{{ u.email }}</td>
+
+              <td>
+                <span class="pill pending">Pending</span>
+              </td>
+
+              <td>{{ u.createdAt | date:'M/d/yyyy, h:mm a' }}</td>
+
+              <td class="right">
+                <!-- ✅ SuperAdmin ONLY -->
+                <ng-container *ngIf="isSuperAdmin; else noPermTpl">
+                  <button class="btn-sm" (click)="approve(u)" [disabled]="loading">Approve</button>
+                  <button class="btn-sm danger" (click)="decline(u)" [disabled]="loading">Decline</button>
+                </ng-container>
+
+                <ng-template #noPermTpl>
+                  <span class="muted">SuperAdmin only</span>
+                </ng-template>
+              </td>
+            </tr>
+          </ng-container>
+
+          <ng-container *ngIf="viewMode==='all'">
+
+            <ng-container *ngIf="!isSuperAdmin || activeTab==='users'">
+              <tr *ngFor="let u of users">
+                <td>{{ u.fullName }}</td>
+                <td>{{ u.email }}</td>
+
+                <td *ngIf="isSuperAdmin">
+                  {{ roleLabel(u.roleId) }}
+                </td>
+
+                <td>
+                  <span class="pill"
+                        [class.approved]="statusLower(u)==='approved'"
+                        [class.deactivated]="statusLower(u)==='deactivated'"
+                        [class.pending]="statusLower(u)==='pending'">
+                    {{ u.status }}
+                  </span>
+                </td>
+
+                <td>{{ u.createdAt | date:'M/d/yyyy, h:mm a' }}</td>
+
+                <td class="right">
+                  <button class="btn-sm"
+                          (click)="invite(u)"
+                          [disabled]="loading || statusLower(u)!=='approved'">
+                    Invite
+                  </button>
+
+                  <button class="btn-sm warn"
+                          *ngIf="isSuperAdmin && statusLower(u)==='approved'"
+                          (click)="deactivate(u)"
+                          [disabled]="loading">
+                    Deactivate
+                  </button>
+
+                  <button class="btn-sm"
+                          *ngIf="isSuperAdmin && statusLower(u)==='deactivated'"
+                          (click)="reactivate(u)"
+                          [disabled]="loading">
+                    Reactivate
+                  </button>
+                </td>
+              </tr>
+            </ng-container>
+
+            <ng-container *ngIf="isSuperAdmin && activeTab==='admins'">
+              <tr *ngFor="let u of admins">
+                <td>{{ u.fullName }}</td>
+                <td>{{ u.email }}</td>
+
+                <td>
+                  {{ roleLabel(u.roleId) }}
+                </td>
+
+                <td>
+                  <span class="pill"
+                        [class.approved]="statusLower(u)==='approved'"
+                        [class.deactivated]="statusLower(u)==='deactivated'">
+                    {{ u.status }}
+                  </span>
+                </td>
+
+                <td>{{ u.createdAt | date:'M/d/yyyy, h:mm a' }}</td>
+
+                <td class="right">
+                  <button class="btn-sm warn"
+                          *ngIf="statusLower(u)==='approved'"
+                          (click)="deactivate(u)"
+                          [disabled]="loading">
+                    Deactivate
+                  </button>
+
+                  <button class="btn-sm"
+                          *ngIf="statusLower(u)==='deactivated'"
+                          (click)="reactivate(u)"
+                          [disabled]="loading">
+                    Reactivate
+                  </button>
+                </td>
+              </tr>
+            </ng-container>
+
+          </ng-container>
+        </tbody>
+      </table>
+    </div>
+
+    <ng-template #emptyTpl>
+      <div class="empty">No records found.</div>
+    </ng-template>
+
+    <ng-template #loadingTpl>
+      <div class="empty">Loading...</div>
+    </ng-template>
+  </section>
+</main>

@@ -42,6 +42,7 @@
     border-radius: 12px;
     padding: 18px;
     box-shadow: 0 6px 22px rgba(0, 0, 0, 0.08);
+    
 }
 
 .card-title {
@@ -261,4 +262,14 @@
     .two-col {
         grid-template-columns: 1fr;
     }
+}
+/* ✅ FIX: stop other cards from stretching when one card expands */
+.user-dashboard .grid {
+  align-items: start !important;     /* stop stretch */
+}
+
+.user-dashboard .grid > .card {
+  align-self: start !important;      /* keep each card at top */
+  height: auto !important;           /* override any height:100% */
+  min-height: 0 !important;          /* override any min-height */
 }

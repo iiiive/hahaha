@@ -1,0 +1,85 @@
+.sidebar-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.35);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.18s ease;
+  z-index: 40;
+}
+
+.sidebar-overlay.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.sidebar-drawer {
+  position: fixed;
+  top: 0;
+  height: 100vh;
+  width: 320px;
+  max-width: 85vw;
+  background: #ffffff;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.20);
+  transform: translateX(-110%);
+  transition: transform 0.2s ease;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-drawer.left {
+  left: 0;
+}
+
+.sidebar-drawer.open {
+  transform: translateX(0);
+}
+
+.drawer-header {
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(0,0,0,0.08);
+}
+
+.drawer-title {
+  font-weight: 700;
+  font-size: 14px;
+  color: #111827;
+}
+
+.drawer-close {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  border: 1px solid rgba(0,0,0,0.10);
+  background: #fff;
+  cursor: pointer;
+}
+
+.drawer-content {
+  flex: 1;
+  overflow: auto;
+}
+
+.drawer-footer {
+  padding: 12px 14px;
+  border-top: 1px solid rgba(0,0,0,0.08);
+}
+
+.logout-btn {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(76, 29, 149, 0.25);
+  background: rgba(76, 29, 149, 0.08);
+  color: #4c1d95;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.logout-btn:hover {
+  background: rgba(76, 29, 149, 0.14);
+}

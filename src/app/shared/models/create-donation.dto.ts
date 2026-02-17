@@ -9,4 +9,7 @@ export interface CreateDonationDto {
   remarks?: string | null;
 
   donationDate?: string | null; // yyyy-mm-dd
+  
+    paymentMethod?: string | null;
+
 }

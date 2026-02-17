@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, AbstractControl, ValidatorFn } from '@angular/forms';
 import { ToastrService } from 'ngx-toastr';
 
 import { DonationService } from '../../core/services/donation.service';
@@ -27,6 +27,11 @@ export class OnlineGivingComponent implements OnInit {
   // dropdown options (no tithe)
   donationTypeOptions = [...FIXED_DONATION_TYPES, 'Other'];
 
+  // ✅ STRICT PATTERNS
+  // "letters only" (realistic names): letters + spaces + apostrophe + hyphen
+  private readonly namePattern = /^[A-Za-z]+(?:[ '\-][A-Za-z]+)*$/;
+  private readonly gcash13Pattern = /^[0-9]{13}$/;
+
   constructor(
     private fb: FormBuilder,
     private donationService: DonationService,
@@ -35,8 +40,8 @@ export class OnlineGivingComponent implements OnInit {
 
   ngOnInit(): void {
     this.donationForm = this.fb.group({
-      firstName: ['', Validators.required],
-      lastName: ['', Validators.required],
+      firstName: ['', [Validators.required, Validators.pattern(this.namePattern)]],
+      lastName: ['', [Validators.required, Validators.pattern(this.namePattern)]],
       email: ['', Validators.email],
 
       donationType: ['Offering', Validators.required],
@@ -45,7 +50,8 @@ export class OnlineGivingComponent implements OnInit {
       amount: [null, [Validators.required, Validators.min(1)]],
       customAmount: [null],
 
-      referenceNo: [''],
+      // ✅ NOW STRICT: digits only + exactly 13 digits
+      referenceNo: ['', [Validators.required, Validators.pattern(this.gcash13Pattern)]],
       remarks: ['']
     });
 
@@ -54,7 +60,7 @@ export class OnlineGivingComponent implements OnInit {
       if (!otherCtrl) return;
 
       if (val === 'Other') {
-        otherCtrl.setValidators([Validators.required]);
+        otherCtrl.setValidators([Validators.required, Validators.pattern(this.namePattern)]);
       } else {
         otherCtrl.clearValidators();
         otherCtrl.setValue('');
@@ -64,38 +70,93 @@ export class OnlineGivingComponent implements OnInit {
     });
   }
 
-  selectPresetAmount(value: number): void {
-    this.donationForm.patchValue({
-      amount: value,
-      customAmount: null
-    });
-  }
+  // ---------------- ✅ INPUT SANITIZERS (auto-clean paste/typing) ----------------
+  onNameInput(controlName: string): void {
+    const ctrl = this.donationForm.get(controlName);
+    if (!ctrl) return;
 
-  useCustomAmount(): void {
-    const custom = Number(this.donationForm.value.customAmount || 0);
-    if (custom > 0) {
-      this.donationForm.patchValue({ amount: custom });
+    const raw = String(ctrl.value ?? '');
+    // keep letters, space, apostrophe, hyphen only
+    const cleaned = raw.replace(/[^A-Za-z '\-]/g, '');
+    if (cleaned !== raw) {
+      ctrl.setValue(cleaned, { emitEvent: false });
     }
   }
 
+  onDigits13Input(controlName: string): void {
+    const ctrl = this.donationForm.get(controlName);
+    if (!ctrl) return;
+
+    const raw = String(ctrl.value ?? '');
+    const digitsOnly = raw.replace(/\D/g, '').slice(0, 13); // digits only, max 13
+    if (digitsOnly !== raw) {
+      ctrl.setValue(digitsOnly, { emitEvent: false });
+    }
+  }
+
+  // ✅ preset buttons should "enter" amount (fill the input + set real amount)
+  selectPresetAmount(value: number): void {
+    this.donationForm.patchValue({
+      customAmount: value,   // so user sees it in the input
+      amount: value
+    });
+
+    this.donationForm.get('customAmount')?.markAsTouched();
+    this.donationForm.get('amount')?.markAsTouched();
+  }
+
+  // ✅ keep amount always synced with customAmount typing
+  onCustomAmountInput(): void {
+    const custom = Number(this.donationForm.value.customAmount || 0);
+    this.donationForm.patchValue({ amount: custom > 0 ? custom : null }, { emitEvent: false });
+  }
+
+  // keep (button) behavior: still works if they press "Custom"
+  useCustomAmount(): void {
+    this.onCustomAmountInput();
+  }
+
   private ensureAmountIsValid(): boolean {
-    this.useCustomAmount();
+    this.onCustomAmountInput();
     const amount = Number(this.donationForm.value.amount || 0);
     return amount > 0;
   }
 
-  private resolveDonationType(): string {
+  /**
+   * ✅ IMPORTANT FIX:
+   * Store donationType exactly like Cash Donations:
+   * - if "Other": donationType="Other" + customDonationType="your label"
+   * - else: donationType="<fixed>" + customDonationType=null
+   */
+  private resolveDonationType(): { donationType: string; customDonationType: string | null; displayType: string } {
     const type = String(this.donationForm.value.donationType || '').trim();
+
     if (type === 'Other') {
-      return String(this.donationForm.value.donationTypeOther || '').trim();
+      const custom = String(this.donationForm.value.donationTypeOther || '').trim();
+      return {
+        donationType: 'Other',
+        customDonationType: custom || null,
+        displayType: custom || 'Other'
+      };
     }
-    return type;
+
+    return {
+      donationType: type,
+      customDonationType: null,
+      displayType: type
+    };
   }
 
   startReview(): void {
+    // ✅ small safety: sanitize before validation check
+    this.onNameInput('firstName');
+    this.onNameInput('lastName');
+    this.onNameInput('donationTypeOther');
+    this.onDigits13Input('referenceNo');
+
     if (this.donationForm.invalid) {
       this.donationForm.markAllAsTouched();
-      this.toastr.warning('Please fill all required fields.');
+      this.toastr.warning('Please fill all required fields correctly.');
       return;
     }
 
@@ -104,18 +165,18 @@ export class OnlineGivingComponent implements OnInit {
       return;
     }
 
-    const finalType = this.resolveDonationType();
-    if (!finalType) {
+    const resolved = this.resolveDonationType();
+    if (!resolved.displayType || (resolved.donationType === 'Other' && !resolved.customDonationType)) {
       this.toastr.warning('Please enter a donation type.');
       return;
     }
 
     this.reviewData = {
-      firstName: this.donationForm.value.firstName,
-      lastName: this.donationForm.value.lastName,
+      firstName: String(this.donationForm.value.firstName || '').trim(),
+      lastName: String(this.donationForm.value.lastName || '').trim(),
       email: this.donationForm.value.email || null,
 
-      donationType: finalType,
+      donationType: resolved.displayType,
       amount: Number(this.donationForm.value.amount),
 
       referenceNo: this.donationForm.value.referenceNo || null,
@@ -132,19 +193,48 @@ export class OnlineGivingComponent implements OnInit {
   confirmAndSubmit(): void {
     if (!this.reviewData) return;
 
+    // ✅ re-resolve again to ensure payload is correct
+    const resolved = this.resolveDonationType();
+    if (resolved.donationType === 'Other' && !resolved.customDonationType) {
+      this.toastr.warning('Please enter a donation type.');
+      return;
+    }
+
+    // ✅ safety sanitize (again)
+    this.onDigits13Input('referenceNo');
+
+    if (this.donationForm.get('referenceNo')?.invalid) {
+      this.toastr.warning('GCash reference must be exactly 13 digits.');
+      this.donationForm.get('referenceNo')?.markAsTouched();
+      return;
+    }
+
     this.isSubmitting = true;
 
     const fullName = `${this.reviewData.firstName} ${this.reviewData.lastName}`.trim();
     const dateStr = new Date().toISOString().slice(0, 10);
 
-    // store donor name for admin tracking
-    const remarksValue = `${fullName} | GCash | ${dateStr}`;
+    // ✅ keep admin tracking format, but include intention safely after extra pipes
+    const userNote = (this.reviewData.remarks || '').trim();
+    const remarksValue = userNote
+      ? `${fullName} | GCash | ${dateStr} | ${userNote}`
+      : `${fullName} | GCash | ${dateStr}`;
 
-    const payload = {
+    const payload: any = {
       amount: this.reviewData.amount,
-      donationType: this.reviewData.donationType,
+
+      // ✅ FIX: store donationType properly (for filtering)
+      donationType: resolved.donationType,
+
+      // ✅ FIX: store custom label in customDonationType (for badge display)
+      customDonationType: resolved.customDonationType,
+
       referenceNo: this.reviewData.referenceNo || null,
-      remarks: remarksValue
+      remarks: remarksValue,
+
+      // ✅ safe optional fields (ignored if backend doesn't have them)
+      donationDate: dateStr,
+      paymentMethod: 'GCash'
     };
 
     this.donationService.create(payload).subscribe({

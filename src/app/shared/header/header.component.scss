@@ -1,0 +1,16 @@
+.menu-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  font-size: 18px;
+  display: grid;
+  place-items: center;
+  transition: background 0.15s ease;
+}
+
+.menu-btn:hover {
+  background: rgba(255, 255, 255, 0.18);
+}

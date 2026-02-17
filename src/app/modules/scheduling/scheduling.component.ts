@@ -8,28 +8,24 @@ import { forkJoin, Observable } from 'rxjs';
 import { ServiceScheduleRequirement } from '../../shared/models/service-schedule-requirement';
 import { environment } from '../../environments/environment';
 import { AuthService } from '../../core/services/auth.service';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
 @Component({
   selector: 'app-scheduling',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './scheduling.component.html',
-  styleUrl: './scheduling.component.scss'
+  styleUrls: ['./scheduling.component.scss']
 })
 export class SchedulingComponent implements OnInit {
   schedulingForm!: FormGroup;
   uploadedFiles: { [key: string]: File[] } = {};
   isAdmin: boolean = false;
 
-  // Admin right (Upcoming approved only)
   schedules: ServiceSchedule[] = [];
-
-  // Admin left (Requests pending + rejected)
   pendingSchedules: ServiceSchedule[] = [];
 
   selectedServiceFilter: string = 'all';
-
-  // ✅ NEW: filter for Upcoming Appointments (right panel)
   selectedUpcomingFilter: string = 'all';
 
   serviceTypeFilters = [
@@ -42,16 +38,36 @@ export class SchedulingComponent implements OnInit {
 
   requirements: ServiceScheduleRequirement[] = [];
   editingId: number | null = null;
+
   environment = environment;
 
   showReviewModal = false;
   reviewData: any = null;
 
+  // ✅ MUST EXIST for template
+  requirementsByScheduleId: Record<number, ServiceScheduleRequirement[]> = {};
+  reqOpenByScheduleId: Record<number, boolean> = {};
+  reqLoadingByScheduleId: Record<number, boolean> = {};
+
+  private readonly namePattern = /^[A-Za-z]+(?:\s[A-Za-z]+)*$/;
+  private readonly phone11Pattern = /^\d{11}$/;
+
+  // ✅ NEW: Preview modal (large default, no sizing controls)
+  showPreviewModal = false;
+  previewTitle = '';
+  previewUrl = '';
+  previewIsImage = true;
+  previewSafeUrl: SafeResourceUrl | null = null;
+
+  // ✅ default LARGE thumbnail size
+  fileThumbPx = 72;
+
   constructor(
     private fb: FormBuilder,
     private scheduleService: ServiceScheduleService,
     private toastr: ToastrService,
-    private authService: AuthService
+    private authService: AuthService,
+    private sanitizer: DomSanitizer
   ) {
     this.isAdmin = this.authService.isAdmin();
   }
@@ -59,11 +75,11 @@ export class SchedulingComponent implements OnInit {
   ngOnInit() {
     this.schedulingForm = this.fb.group({
       serviceType: ['', Validators.required],
-      partner1FullName: [''],
-      partner2FullName: [''],
-      clientFirstName: ['', Validators.required],
-      clientLastName: ['', Validators.required],
-      clientPhone: ['', [Validators.required, Validators.pattern(/^[0-9\-\+]{9,15}$/)]],
+      partner1FullName: ['', [Validators.pattern(this.namePattern)]],
+      partner2FullName: ['', [Validators.pattern(this.namePattern)]],
+      clientFirstName: ['', [Validators.required, Validators.pattern(this.namePattern)]],
+      clientLastName: ['', [Validators.required, Validators.pattern(this.namePattern)]],
+      clientPhone: ['', [Validators.required, Validators.pattern(this.phone11Pattern)]],
       clientEmail: ['', [Validators.required, Validators.email]],
       serviceDate: ['', Validators.required],
       serviceTime: ['', Validators.required],
@@ -86,8 +102,11 @@ export class SchedulingComponent implements OnInit {
       address?.clearValidators();
 
       if (type === 'wedding') {
-        partner1?.setValidators([Validators.required]);
-        partner2?.setValidators([Validators.required]);
+        partner1?.setValidators([Validators.required, Validators.pattern(this.namePattern)]);
+        partner2?.setValidators([Validators.required, Validators.pattern(this.namePattern)]);
+      } else {
+        partner1?.setValidators([Validators.pattern(this.namePattern)]);
+        partner2?.setValidators([Validators.pattern(this.namePattern)]);
       }
 
       if (type === 'blessing' || type === 'funeral') {
@@ -100,19 +119,13 @@ export class SchedulingComponent implements OnInit {
     });
   }
 
-  // ✅ ADMIN UI: hide deleted schedules
-  // ✅ Upcoming = Approved only
-  // ✅ Requests = Pending + Rejected
   loadSchedules() {
     this.scheduleService.getAll().subscribe({
       next: (data) => {
         const mapped = (data || []).map((s: any) => this.mapSchedule(s));
-
-        // Hide deleted from admin lists (but they still exist in DB for user dashboard)
         const activeOnly = mapped.filter((s: ServiceSchedule) => !s.isDeleted);
 
         this.schedules = activeOnly.filter((s) => (s.status ?? '') === 'Approved');
-
         this.pendingSchedules = activeOnly.filter(
           (s) => (s.status ?? '') === 'Pending' || (s.status ?? '') === 'Rejected'
         );
@@ -149,32 +162,127 @@ export class SchedulingComponent implements OnInit {
     }
   }
 
+  onNameInput(controlName: string) {
+    const ctrl = this.schedulingForm.get(controlName);
+    if (!ctrl) return;
+
+    const raw = String(ctrl.value ?? '');
+    const cleaned = raw.replace(/[^A-Za-z\s]/g, '').replace(/\s+/g, ' ').trimStart();
+    if (cleaned !== raw) ctrl.setValue(cleaned, { emitEvent: false });
+  }
+
+  onPhoneInput() {
+    const ctrl = this.schedulingForm.get('clientPhone');
+    if (!ctrl) return;
+
+    const raw = String(ctrl.value ?? '');
+    const digitsOnly = raw.replace(/\D/g, '').slice(0, 11);
+    if (digitsOnly !== raw) ctrl.setValue(digitsOnly, { emitEvent: false });
+  }
+
   capitalize(value: string): string {
     return value ? value.charAt(0).toUpperCase() + value.slice(1) : '';
   }
 
   get filteredPendingSchedules(): ServiceSchedule[] {
     if (this.selectedServiceFilter === 'all') return this.pendingSchedules;
-    return this.pendingSchedules.filter(
-      (s) => (s.serviceType ?? '').toLowerCase() === this.selectedServiceFilter
-    );
+    return this.pendingSchedules.filter((s) => (s.serviceType ?? '').toLowerCase() === this.selectedServiceFilter);
   }
 
-  // ✅ NEW: filtered list for Upcoming Appointments (right panel)
   get filteredUpcomingSchedules(): ServiceSchedule[] {
     if (this.selectedUpcomingFilter === 'all') return this.schedules;
-    return this.schedules.filter(
-      (s) => (s.serviceType ?? '').toLowerCase() === this.selectedUpcomingFilter
-    );
+    return this.schedules.filter((s) => (s.serviceType ?? '').toLowerCase() === this.selectedUpcomingFilter);
   }
 
   setServiceFilter(key: string) {
     this.selectedServiceFilter = key;
   }
 
-  // ✅ NEW: set filter for Upcoming Appointments
   setUpcomingFilter(key: string) {
     this.selectedUpcomingFilter = key;
+  }
+
+  toggleRequirements(scheduleId: number | undefined) {
+    if (!scheduleId) return;
+
+    this.reqOpenByScheduleId[scheduleId] = !this.reqOpenByScheduleId[scheduleId];
+
+    if (this.reqOpenByScheduleId[scheduleId] && !this.requirementsByScheduleId[scheduleId]) {
+      this.loadRequirementsFor(scheduleId);
+    }
+  }
+
+  private loadRequirementsFor(scheduleId: number) {
+    this.reqLoadingByScheduleId[scheduleId] = true;
+
+    this.scheduleService.getRequirements(scheduleId).subscribe({
+      next: (reqs) => {
+        this.requirementsByScheduleId[scheduleId] = Array.isArray(reqs) ? reqs : [];
+      },
+      error: () => {
+        this.requirementsByScheduleId[scheduleId] = [];
+      },
+      complete: () => {
+        this.reqLoadingByScheduleId[scheduleId] = false;
+      }
+    });
+  }
+
+  // ✅ robust URL builder
+  reqUrl(req: any): string {
+    const fp = String(req?.filePath || req?.FilePath || req?.path || req?.Path || req?.url || req?.Url || '');
+    if (!fp) return '';
+
+    if (/^https?:\/\//i.test(fp)) return fp;
+
+    const base = (this.environment.imageUrl || '').replace(/\/$/, '');
+    if (fp.startsWith('/')) return `${base}${fp}`;
+    return `${base}/${fp}`;
+  }
+
+  isImageFile(req: any): boolean {
+    const fp = String(req?.filePath || req?.FilePath || req?.path || req?.Path || req?.url || '').toLowerCase();
+    return fp.endsWith('.jpg') || fp.endsWith('.jpeg') || fp.endsWith('.png') || fp.endsWith('.webp') || fp.endsWith('.gif');
+  }
+
+  // ✅ normalize requirement type to match your keys
+  private normalizeReqType(value: any): string {
+    return String(value ?? '')
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, '_')
+      .replace(/-/g, '_');
+  }
+
+  // ✅ show files under their correct upload field
+  getRequirementsForType(typeKey: 'couple_picture' | 'valid_id' | 'certificate'): ServiceScheduleRequirement[] {
+    const key = this.normalizeReqType(typeKey);
+
+    return (this.requirements || []).filter((r: any) => {
+      const rt = this.normalizeReqType(r?.requirementType || r?.RequirementType || r?.type || '');
+      return rt === key;
+    });
+  }
+
+  // ✅ Preview modal: large display, no sizing controls
+  openPreview(req: any, titleOverride?: string) {
+    const url = this.reqUrl(req);
+    if (!url) return;
+
+    this.previewTitle = titleOverride || req?.requirementType || 'Requirement';
+    this.previewUrl = url;
+    this.previewIsImage = this.isImageFile(req);
+    this.previewSafeUrl = this.sanitizer.bypassSecurityTrustResourceUrl(url);
+
+    this.showPreviewModal = true;
+  }
+
+  closePreview() {
+    this.showPreviewModal = false;
+    this.previewTitle = '';
+    this.previewUrl = '';
+    this.previewIsImage = true;
+    this.previewSafeUrl = null;
   }
 
   // ---------- REVIEW FLOW ----------
@@ -200,7 +308,6 @@ export class SchedulingComponent implements OnInit {
   // ---------- CREATE / UPDATE ----------
   private persistSchedule() {
     const formValue = this.schedulingForm.value;
-
     const baseStatus: ScheduleStatus = 'Pending';
 
     const schedule: ServiceSchedule = {
@@ -320,7 +427,6 @@ export class SchedulingComponent implements OnInit {
     };
   }
 
-  // ✅ Approve / Reject = update status only (NOT delete)
   approveRequest(req: ServiceSchedule) {
     if (!req?.id) return;
 
@@ -360,7 +466,7 @@ export class SchedulingComponent implements OnInit {
   }
 
   editSchedule(schedule: ServiceSchedule) {
-    this.editingId = schedule.id;
+    this.editingId = schedule.id ?? null;
 
     this.schedulingForm.patchValue({
       serviceType: schedule.serviceType,
@@ -376,14 +482,18 @@ export class SchedulingComponent implements OnInit {
       serviceAddress: schedule.addressLine
     });
 
-    if ((schedule.serviceType || '').toLowerCase() === 'wedding') {
+    if ((schedule.serviceType || '').toLowerCase() === 'wedding' && schedule.id) {
       this.scheduleService.getRequirements(schedule.id).subscribe((reqs) => {
-        this.requirements = reqs;
+        this.requirements = Array.isArray(reqs) ? reqs : [];
+        this.requirementsByScheduleId[schedule.id!] = this.requirements;
       });
+    } else {
+      this.requirements = [];
     }
+
+    this.closePreview();
   }
 
-  // ✅ Option A: Keep DELETE button, but backend DELETE must be SOFT DELETE
   deleteAppointment(id: number | undefined) {
     if (!id) return;
     if (!confirm('Are you sure you want to delete this appointment?')) return;
@@ -401,6 +511,10 @@ export class SchedulingComponent implements OnInit {
     this.schedulingForm.reset();
     this.uploadedFiles = {};
     this.editingId = null;
+    this.showReviewModal = false;
+    this.reviewData = null;
+    this.requirements = [];
+    this.closePreview();
   }
 
   getAppointmentTitle(appt: ServiceSchedule): string {

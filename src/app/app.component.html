@@ -1,3 +1,86 @@
-<app-header></app-header>
-<app-navbar></app-navbar>
+<!-- Hide header/navbar ONLY on login + register/create-account pages -->
+<app-header
+  *ngIf="!isAuthPage()"
+  (toggleSidebar)="toggleSidebar()">
+</app-header>
+
+<app-navbar *ngIf="!isAuthPage()"></app-navbar>
+
+<!-- Overlay -->
+<div
+  *ngIf="!isAuthPage()"
+  class="sidebar-overlay"
+  [class.show]="sidebarOpen"
+  (click)="closeSidebar()">
+</div>
+
+<!-- ✅ LEFT SIDEBAR DRAWER -->
+<aside
+  *ngIf="!isAuthPage()"
+  class="sidebar-drawer"
+  [class.open]="sidebarOpen"
+  (click)="$event.stopPropagation()">
+
+  <div class="drawer-header">
+    <div class="drawer-title">Menu</div>
+    <button class="drawer-close" type="button" (click)="closeSidebar()">✕</button>
+  </div>
+
+  <div class="drawer-content">
+    <div class="section-title">SETTINGS</div>
+
+    <a class="nav-item" routerLink="/settings/profile" routerLinkActive="active" (click)="closeSidebar()">
+      Profile Settings
+    </a>
+
+    <a class="nav-item" routerLink="/settings/password" routerLinkActive="active" (click)="closeSidebar()">
+      Change Password
+    </a>
+
+    <a class="nav-item" routerLink="/settings/notifications" routerLinkActive="active" (click)="closeSidebar()">
+      Notification Preferences
+    </a>
+
+    <ng-container *ngIf="!isAdminAccess()">
+      <a class="nav-item" routerLink="/word-of-god/bookmarks" routerLinkActive="active" (click)="closeSidebar()">
+        Bookmarks
+      </a>
+    </ng-container>
+
+    <a class="nav-item" routerLink="/settings/faqs" routerLinkActive="active" (click)="closeSidebar()">
+      FAQs
+    </a>
+
+    <a class="nav-item" routerLink="/settings/contact-admin" routerLinkActive="active" (click)="closeSidebar()">
+      Contact Admin
+    </a>
+
+    <ng-container *ngIf="isAdminAccess()">
+      <div class="section-title mt-12">ADMIN TOOLS</div>
+
+      <a class="nav-item" routerLink="/admin/audit-logs" routerLinkActive="active" (click)="closeSidebar()">
+        Audit Logs / Activity Log
+      </a>
+
+      <a class="nav-item" routerLink="/admin/users" routerLinkActive="active" (click)="closeSidebar()">
+        Users
+      </a>
+
+      <!-- ✅ SuperAdmin ONLY -->
+      <a
+        class="nav-item"
+        *ngIf="isSuperAdminAccess()"
+        routerLink="/admin/users/pending"
+        routerLinkActive="active"
+        (click)="closeSidebar()">
+        User Approvals (Pending)
+      </a>
+    </ng-container>
+  </div>
+
+  <div class="drawer-footer">
+    <button type="button" class="logout-btn" (click)="logout()">Logout</button>
+  </div>
+</aside>
+
 <router-outlet></router-outlet>

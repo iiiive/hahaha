@@ -30,3 +30,40 @@
 .scrollbox::-webkit-scrollbar-thumb:hover {
   background: #9333ea;
 }
+:host {
+  display: block;
+}
+
+.card-shadow {
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+}
+
+/* ✅ Important for flex-based internal scroll containers */
+.scrollbox {
+  min-height: 0;
+}
+
+/* ========== Scrollbar Styling ========== */
+.scrollbox {
+  scrollbar-width: thin;              /* Firefox */
+  scrollbar-color: #a855f7 #f1f5f9;   /* thumb / track */
+}
+
+.scrollbox::-webkit-scrollbar {
+  width: 10px;
+}
+
+.scrollbox::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 999px;
+}
+
+.scrollbox::-webkit-scrollbar-thumb {
+  background: #a855f7;
+  border-radius: 999px;
+  border: 2px solid #f1f5f9;
+}
+
+.scrollbox::-webkit-scrollbar-thumb:hover {
+  background: #9333ea;
+}

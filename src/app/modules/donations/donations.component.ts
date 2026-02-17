@@ -15,6 +15,11 @@ type DonationTypeOption =
   | 'KAPASALAMATAN'
   | 'Other';
 
+type PaymentFilterOption =
+  | 'All'
+  | 'Cash'
+  | 'GCash';
+
 @Component({
   selector: 'app-donations-admin',
   standalone: true,
@@ -59,6 +64,12 @@ export class DonationsComponent implements OnInit {
   selectedYear: number = new Date().getFullYear();
 
   donationTypeFilter: DonationTypeOption = 'All Donations';
+
+  // ✅ NEW: Payment filter (based on remarks markers)
+  paymentFilter: PaymentFilterOption = 'All';
+
+  // ✅ NEW: Search donor
+  searchTerm: string = '';
 
   selectedWeek = 0;
   weeks: { label: string; start: Date; end: Date }[] = [];
@@ -203,6 +214,34 @@ export class DonationsComponent implements OnInit {
     this.applyFilters();
   }
 
+  // ✅ NEW: payment filter setter
+  setPaymentFilter(value: PaymentFilterOption): void {
+    this.paymentFilter = value;
+    this.currentPage = 1;
+    this.applyFilters();
+  }
+
+  // ✅ NEW: search donor
+  onSearchChange(): void {
+    this.currentPage = 1;
+    this.applyFilters();
+  }
+
+  private norm(s: any): string {
+    return String(s ?? '').trim().toLowerCase();
+  }
+
+  // ✅ detection from remarks (no backend changes required)
+  private isCashDonation(d: Donation): boolean {
+    const r = this.norm(d.remarks);
+    return r.includes('| cash |');
+  }
+
+  private isGcashDonation(d: Donation): boolean {
+    const r = this.norm(d.remarks);
+    return r.includes('| gcash |');
+  }
+
   applyFilters(): void {
     const start = this.monthStart;
     const endExcl = this.monthEndExclusive;
@@ -213,17 +252,39 @@ export class DonationsComponent implements OnInit {
       return dt >= start && dt < endExcl; // ✅ month filter
     });
 
+    // ✅ donation type filter (matches your existing logic)
     if (this.donationTypeFilter !== 'All Donations') {
-      const want = String(this.donationTypeFilter).trim().toLowerCase();
-      list = list.filter(d => String(d.donationType || '').trim().toLowerCase() === want);
+      const want = this.norm(this.donationTypeFilter);
+      list = list.filter(d => this.norm(d.donationType) === want);
     }
 
+    // ✅ week filter
     if (this.selectedWeek >= 1 && this.selectedWeek <= 4) {
       const wk = this.weeks[this.selectedWeek - 1];
       list = list.filter((d) => {
         const dt = this.getEffectiveDate(d);
         if (!dt) return false;
-        return dt >= wk.start && dt <= wk.end; // ✅ week filter
+        return dt >= wk.start && dt <= wk.end;
+      });
+    }
+
+    // ✅ NEW: payment filter (based on remarks markers)
+    if (this.paymentFilter !== 'All') {
+      if (this.paymentFilter === 'Cash') {
+        list = list.filter(d => this.isCashDonation(d));
+      } else if (this.paymentFilter === 'GCash') {
+        list = list.filter(d => this.isGcashDonation(d));
+      }
+    }
+
+    // ✅ NEW: search donor (by parsed donor name + also supports searching remark string)
+    const q = this.norm(this.searchTerm);
+    if (q) {
+      list = list.filter(d => {
+        const donor = this.norm(this.getDonorName(d));
+        const remarks = this.norm(d.remarks);
+        const customType = this.norm(d.customDonationType);
+        return donor.includes(q) || remarks.includes(q) || customType.includes(q);
       });
     }
 
@@ -302,7 +363,10 @@ export class DonationsComponent implements OnInit {
       customDonationType: customDonationType,
       referenceNo: null,
       remarks,
-      donationDate: this.cashDateStr, // ✅ this is what makes March stay March
+      donationDate: this.cashDateStr,
+
+      // ✅ kept (won’t break even if backend ignores it)
+      paymentMethod: 'Cash'
     };
 
     this.isSaving = true;

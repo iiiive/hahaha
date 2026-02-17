@@ -1,8 +1,9 @@
 <nav class="bg-white shadow-md sticky top-0 z-40">
   <div class="w-full px-4">
     <div class="flex w-full overflow-x-auto md:overflow-visible py-2 text-sm md:text-base lg:text-lg">
-      @if(isAdmin)
-      {
+
+      <!-- ADMIN / SUPERADMIN -->
+      <ng-container *ngIf="isAdmin; else userNav">
         <a routerLink="/dashboard" routerLinkActive="active"
           class="nav-btn md:flex-1 text-center md:py-3 px-3 whitespace-nowrap">Dashboard</a>
 
@@ -17,10 +18,10 @@
 
         <a routerLink="/documents" routerLinkActive="active"
           class="nav-btn md:flex-1 text-center md:py-3 px-3 whitespace-nowrap">Documents</a>
-      }
-      @else
-      {
-        <!-- ✅ NEW: USER DASHBOARD -->
+      </ng-container>
+
+      <!-- USER -->
+      <ng-template #userNav>
         <a routerLink="/user-dashboard" routerLinkActive="active"
           class="nav-btn md:flex-1 text-center md:py-3 px-3 whitespace-nowrap">Dashboard</a>
 
@@ -35,7 +36,8 @@
 
         <a routerLink="/documents" routerLinkActive="active"
           class="nav-btn md:flex-1 text-center md:py-3 px-3 whitespace-nowrap">Documents</a>
-      }
+      </ng-template>
+
     </div>
   </div>
 </nav>

@@ -1,245 +1,457 @@
-/* ===== Page Wrapper ===== */
+:host {
+  display: block;
+  width: 100%;
+}
+
 .user-dashboard {
-  max-width: 1100px;
+  width: 100%;
+  max-width: 1180px;   /* ✅ prevents left-collapse */
   margin: 0 auto;
-  padding: 18px 18px 28px;
+  padding: 0 16px 24px;
 }
 
-/* Error */
+/* =========================
+   ERROR
+========================= */
 .error-card {
-  background: #fee2e2;
-  border: 1px solid #fecaca;
-  color: #991b1b;
+  background: #fff;
+  border: 1px solid #f3b4ae;
+  color: #c0362c;
+  border-radius: 14px;
   padding: 12px 14px;
-  border-radius: 12px;
-  margin-bottom: 16px;
-  font-size: 0.9rem;
+  margin-top: 12px;
+  font-weight: 700;
 }
 
-/* ===== Grid ===== */
+/* =========================
+   CAROUSEL (BANNER FIT)
+========================= */
+.carousel-wrap {
+  margin-top: 14px;
+  margin-bottom: 14px;
+}
+
+.carousel {
+  position: relative;
+  width: 100%;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #f3f4f6;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.08);
+}
+
+/* ✅ fixed banner size + fits all uploaded images */
+.carousel-inner {
+  width: 100%;
+  height: 260px; /* ✅ banner height */
+  overflow: hidden;
+}
+
+.carousel-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;     /* ✅ no stretching */
+  object-position: center;
+  display: block;
+}
+
+@media (max-width: 768px) {
+  .carousel-inner { height: 190px; }
+}
+
+.carousel-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  border: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 22px;
+  font-weight: 900;
+  background: rgba(255, 255, 255, 0.85);
+  color: #4b5563;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+}
+
+.carousel-btn:hover { background: rgba(255, 255, 255, 0.95); }
+
+.carousel-btn.prev { left: 12px; }
+.carousel-btn.next { right: 12px; }
+
+.carousel-dots {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 10px;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.dot.active { background: rgba(255, 255, 255, 0.95); }
+
+/* =========================
+   GRID
+========================= */
 .grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 16px;
-
-  @media (max-width: 1024px) {
-    grid-template-columns: 1fr;
-  }
 }
 
-/* ===== Card ===== */
+@media (max-width: 1024px) {
+  .grid { grid-template-columns: 1fr; }
+}
+
+/* =========================
+   CARDS (COLLAPSIBLE)
+========================= */
 .card {
-  background: rgba(255, 255, 255, 0.95);
-  border: 1px solid rgba(124, 58, 237, 0.14);
-  border-radius: 16px;
-  box-shadow: 0 10px 30px rgba(17, 24, 39, 0.06);
+  background: #fff;
+  border: 1px solid #e9e9e9;
+  border-radius: 14px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.06);
   overflow: hidden;
 }
 
-/* Head */
 .card-head {
-  padding: 14px 16px 12px;
-  border-bottom: 1px solid rgba(124, 58, 237, 0.10);
-  background: linear-gradient(
-    180deg,
-    rgba(124, 58, 237, 0.10),
-    rgba(255, 255, 255, 0)
-  );
+  padding: 14px 14px;
+  background: linear-gradient(180deg, rgba(111,106,216,.12), rgba(111,106,216,.06));
+}
+
+.clickable {
+  cursor: pointer;
+  user-select: none;
 }
 
 .head-row {
   display: flex;
-  align-items: flex-start;
   justify-content: space-between;
   gap: 10px;
+  align-items: center;
 }
 
 .card-title {
-  font-size: 1rem;
-  font-weight: 700;
+  font-weight: 900;
   color: #111827;
-  letter-spacing: 0.2px;
 }
 
-/* Typography helpers */
-.muted { color: #6b7280; }
-.small { font-size: 0.82rem; line-height: 1.25rem; }
-.strong { font-weight: 700; color: #111827; }
-
-/* View all button */
-.view-all-btn {
-  flex-shrink: 0;
-  border: 1px solid rgba(124, 58, 237, 0.25);
-  background: rgba(124, 58, 237, 0.08);
-  color: #6d28d9;
-  font-weight: 700;
-  font-size: 0.78rem;
-  padding: 7px 10px;
-  border-radius: 999px;
-  cursor: pointer;
-  transition: transform 0.12s ease, background 0.12s ease, border-color 0.12s ease;
-
-  &:hover {
-    background: rgba(124, 58, 237, 0.12);
-    border-color: rgba(124, 58, 237, 0.35);
-    transform: translateY(-1px);
-  }
-
-  &:active { transform: translateY(0); }
+.card-body {
+  padding: 12px 14px 14px;
 }
 
-/* ===== List ===== */
-.list {
-  padding: 10px 12px 14px;
-  scroll-behavior: smooth;
+/* right side tools */
+.right-tools {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
 }
 
-/* ✅ Default: show about 5 rows then internal scroll for the rest */
-.scroll-5 {
-  max-height: 340px; /* approx ~5 rows */
-  overflow-y: auto;
-  padding-right: 6px;
+.chev {
+  font-weight: 900;
+  color: #5c57c9;
+  transition: transform .2s ease;
 }
 
-/* ✅ Expanded: still scrollable, just taller */
-.scroll-all {
-  max-height: 560px;
-  overflow-y: auto;
-  padding-right: 6px;
-}
+.chev.open { transform: rotate(180deg); }
 
-/* keyboard focus outline */
-.fade-scroll:focus {
-  outline: 2px solid rgba(124, 58, 237, 0.25);
-  outline-offset: 2px;
-  border-radius: 12px;
-}
-
-/* Scrollbar */
-.scroll-5::-webkit-scrollbar,
-.scroll-all::-webkit-scrollbar {
-  width: 6px;
-}
-
-.scroll-5::-webkit-scrollbar-thumb,
-.scroll-all::-webkit-scrollbar-thumb {
-  background: rgba(124, 58, 237, 0.35);
-  border-radius: 999px;
-}
-
-.scroll-5::-webkit-scrollbar-track,
-.scroll-all::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-/* Fade hints */
-.fade-scroll {
-  position: relative;
-}
-
-.fade-scroll::before,
-.fade-scroll::after {
-  content: "";
-  position: sticky;
-  left: 0;
-  right: 0;
-  height: 18px;
-  display: block;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.18s ease;
-  z-index: 2;
-}
-
-.fade-scroll::before {
-  top: 0;
-  background: linear-gradient(to bottom, rgba(255,255,255,0.95), rgba(255,255,255,0));
-}
-
-.fade-scroll::after {
-  bottom: 0;
-  background: linear-gradient(to top, rgba(255,255,255,0.95), rgba(255,255,255,0));
-  opacity: 1;
-}
-
-.fade-scroll:focus-within::before { opacity: 1; }
-.fade-scroll:focus-within::after { opacity: 1; }
-
-/* ===== Rows ===== */
-.row {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 12px 12px;
-  border-radius: 12px;
-  border: 1px solid rgba(17, 24, 39, 0.06);
-  background: rgba(255, 255, 255, 0.9);
-  margin-bottom: 10px;
-
-  transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
-
-  &:hover {
-    border-color: rgba(124, 58, 237, 0.22);
-    box-shadow: 0 10px 18px rgba(17, 24, 39, 0.08);
-    transform: translateY(-1px);
-  }
-}
-
-.row:last-child { margin-bottom: 0; }
-.row-left { min-width: 0; }
-.row-right { text-align: right; flex-shrink: 0; }
-
-/* prevent long text from breaking layout */
-.row-left .strong,
-.row-left .muted {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 280px;
-
-  @media (max-width: 1024px) {
-    max-width: 100%;
-  }
-}
-
-/* Empty state */
-.empty {
-  padding: 18px 16px;
-  text-align: center;
-  font-size: 0.9rem;
-  color: #6b7280;
-}
-
-/* Pills */
+/* pill */
 .pill {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 5px 10px;
+  padding: 4px 10px;
   border-radius: 999px;
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.2px;
-  border: 1px solid rgba(124, 58, 237, 0.25);
-  background: rgba(124, 58, 237, 0.10);
-  color: #6d28d9;
+  border: 1px solid rgba(111, 106, 216, 0.28);
+  background: rgba(111, 106, 216, 0.14);
+  color: #5c57c9;
+  font-size: 12px;
+  font-weight: 800;
   white-space: nowrap;
 }
 
-.pill.ready {
-  border-color: rgba(22, 163, 74, 0.35);
-  background: rgba(22, 163, 74, 0.10);
-  color: #15803d;
+/* =========================
+   LIST + INTERNAL SCROLL
+========================= */
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  outline: none;
 }
 
-.pill.claimed {
-  border-color: rgba(37, 99, 235, 0.35);
-  background: rgba(37, 99, 235, 0.10);
-  color: #1d4ed8;
+/* ✅ show ~5 items height; rest scroll */
+.scroll-5 {
+  max-height: 260px;
+  overflow: auto;
+  padding-right: 6px;
 }
 
-.pill.rejected {
-  border-color: rgba(220, 38, 38, 0.35);
-  background: rgba(220, 38, 38, 0.10);
-  color: #b91c1c;
+.row {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  background: #fbfbfd;
+  border: 1px solid #f0f0f0;
+  border-radius: 12px;
+  padding: 10px;
+}
+
+.row-left { min-width: 0; }
+.row-right { text-align: right; }
+
+.strong {
+  font-weight: 900;
+  color: #111827;
+}
+
+.small {
+  font-size: 12px;
+}
+
+.muted {
+  color: #6b7280;
+}
+
+.empty {
+  padding: 10px 0;
+}
+/* ===== 3D carousel frame (banner-like) ===== */
+.carousel3d-stage {
+  width: 100%;
+  max-width: 980px;         /* adjust if you want wider */
+  margin: 0 auto;
+  height: 240px;            /* banner height */
+  perspective: 1200px;
+  position: relative;
+}
+
+/* The clickable card/item */
+.carousel3d-item {
+  width: 420px;             /* card width */
+  height: 220px;            /* card height */
+  border-radius: 16px;
+  overflow: hidden;
+  border: none;
+  background: rgba(255,255,255,0.25);
+  backdrop-filter: blur(6px);
+  cursor: pointer;
+}
+
+/* ✅ NO CROPPING: show the full image */
+.carousel3d-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;      /* ✅ this removes cropping */
+  object-position: center;
+  display: block;
+  background: #f3f4f6;      /* fills empty space if image doesn't match ratio */
+}
+.user-dashboard {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 18px 16px 40px;
+}
+
+/* Error card (cleaner) */
+.error-card {
+  background: rgba(255, 240, 240, 0.95);
+  border: 1px solid rgba(220, 38, 38, 0.25);
+  color: #991b1b;
+  border-radius: 14px;
+  padding: 12px 14px;
+  margin-bottom: 14px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.05);
+}
+
+/* ✅ Banner container */
+.banner-card {
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(147, 51, 234, 0.15);
+  border-radius: 18px;
+  padding: 14px;
+  margin: 14px auto 18px;
+  box-shadow: 0 16px 40px rgba(17, 24, 39, 0.08);
+  backdrop-filter: blur(8px);
+}
+
+/* header above banner */
+.banner-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 2px 6px 10px;
+}
+
+.banner-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: #111827;
+  margin: 0;
+}
+
+.banner-sub {
+  font-size: 12px;
+  color: rgba(107, 114, 128, 0.9);
+}
+
+/* ✅ Frame around the carousel */
+.banner-frame {
+  border-radius: 16px;
+  border: 1px solid rgba(147, 51, 234, 0.18);
+  background: rgba(255, 255, 255, 0.7);
+  padding: 10px;
+  overflow: hidden;
+
+  /* subtle inner shadow / frame feel */
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.6),
+    0 12px 26px rgba(17, 24, 39, 0.08);
+}
+
+/* ✅ Make banner carousel sit nicely centered */
+:host ::ng-deep .banner3d-wrap {
+  margin: 0 auto;
+}
+
+:host ::ng-deep .banner3d {
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+/* if your banner carousel image is too tall/wide, enforce consistent crop */
+:host ::ng-deep .banner3d-img {
+  width: 100%;
+  height: 320px; /* adjust: 280–360 looks best */
+  object-fit: cover;
+  display: block;
+  border-radius: 12px;
+}
+
+/* ✅ Grid spacing */
+.grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+
+/* 3 columns on wider screens */
+@media (min-width: 900px) {
+  .grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+}
+
+/* Slightly nicer card default */
+.card {
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 16px;
+  box-shadow: 0 14px 34px rgba(17, 24, 39, 0.08);
+  overflow: hidden;
+}
+
+/* Keep your existing card-head styles if you already have them; this just improves feel */
+.card-head {
+  padding: 12px 14px;
+}
+
+/* soften list sections */
+.card-body {
+  padding: 0 14px 14px;
+}
+.user-dashboard {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 18px 18px 40px;
+}
+
+.error-card {
+  background: #ffecec;
+  border: 1px solid #ffb3b3;
+  color: #8a1f1f;
+  padding: 12px 14px;
+  border-radius: 12px;
+  margin-bottom: 14px;
+}
+
+/* ✅ Announcements Card */
+.banner-card {
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(140, 92, 246, 0.25);
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+  padding: 14px;
+  margin-bottom: 16px;
+}
+
+.banner-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 6px 6px 10px;
+}
+
+.banner-title {
+  font-size: 15px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.banner-sub {
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+/* ✅ Frame around the carousel */
+.banner-frame {
+  border-radius: 14px;
+  border: 1px solid rgba(140, 92, 246, 0.25);
+  background: rgba(255, 255, 255, 0.65);
+  padding: 12px;
+
+  /* ✅ match admin feel: centered, not overly huge */
+  max-width: 920px;
+  margin: 0 auto;
+}
+
+/* ✅ Grid */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(240px, 1fr));
+  gap: 14px;
+}
+
+@media (max-width: 1000px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
+.user-dashboard .grid {
+  align-items: start; /* override default stretch */
+}
+
+.user-dashboard .grid > .card {
+  align-self: start;  /* each card keeps its own natural height */
+}
+.pill.outline-purple{
+  background: transparent !important;
+  border: 1px solid #7C3AED !important;
+  color: #7C3AED !important;
+}
+.pill.outline-purple:disabled{
+  opacity: .6;
+  cursor: not-allowed;
 }

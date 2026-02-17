@@ -45,6 +45,11 @@ export class RegisterComponent {
       {
         fullName: ['', [Validators.required, Validators.maxLength(120)]],
         email: ['', [Validators.required, Validators.email, Validators.maxLength(150)]],
+
+        // ✅ NEW (matches RegisterDto + DB columns)
+        completeAddress: ['', [Validators.maxLength(255)]],
+        phoneNumber: ['', [Validators.maxLength(50)]],
+
         password: ['', [Validators.required, Validators.minLength(6), Validators.maxLength(100)]],
         confirmPassword: ['', [Validators.required]],
         roleId: [2], // 2=User (default), 1=Admin
@@ -82,6 +87,10 @@ export class RegisterComponent {
       email: String(this.f['email'].value || '').trim().toLowerCase(),
       password: String(this.f['password'].value || ''),
       roleId: roleId === 1 ? 1 : 2, // ✅ only allow 1 or 2 from UI
+
+      // ✅ NEW: send to backend RegisterDto
+      completeAddress: String(this.f['completeAddress'].value || '').trim(),
+      phoneNumber: String(this.f['phoneNumber'].value || '').trim(),
     };
 
     this.loading = true;
@@ -107,7 +116,7 @@ export class RegisterComponent {
           if (status === 400) {
             this.toastr.error(err?.error?.message || 'Invalid registration input.');
             return;
-          } 
+          }
 
           if (status === 403) {
             this.toastr.error(err?.error?.message || 'Registration not allowed.');

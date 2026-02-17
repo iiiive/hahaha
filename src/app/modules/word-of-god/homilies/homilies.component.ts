@@ -5,6 +5,7 @@ import { AmanuService } from '../../../core/services/amanu.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { Amanu } from '../../../shared/models/amanu';
 import { ToastrService } from 'ngx-toastr';
+import { BookmarkItem, BookmarkService } from '../../../core/services/bookmark.service';
 
 @Component({
   selector: 'app-homilies',
@@ -16,12 +17,14 @@ import { ToastrService } from 'ngx-toastr';
 export class HomiliesComponent implements OnInit, AfterViewInit, OnDestroy {
   homilies: Amanu[] = [];
   filteredHomilies: Amanu[] = [];
+
   modalForm!: FormGroup;
   showModal = false;
   modalType: 'homily' = 'homily';
   selectedYear: number | null = null;
   selectedMonth: number | null = null;
   isAdmin: boolean = false;
+
   themesList: string[] = ['Advent', 'Christmas', 'Epiphany', 'Lent', 'Easter', 'Pentecost', 'Ordinary Time'];
   years: number[] = [];
   months = [
@@ -30,32 +33,35 @@ export class HomiliesComponent implements OnInit, AfterViewInit, OnDestroy {
     { name: 'July', value: 7 }, { name: 'August', value: 8 }, { name: 'September', value: 9 },
     { name: 'October', value: 10 }, { name: 'November', value: 11 }, { name: 'December', value: 12 }
   ];
+
   editingId: number | null = null;
 
-  // REVIEW STATE (same idea as in GospelComponent)
   isReviewing = false;
   reviewData: any = null;
 
-  // VIEW-ONLY STATE (for clicking a card)
   showViewModal = false;
   viewHomilyItem: Amanu | null = null;
 
-  // ✅ INTERNAL SCROLL STATE (max ~3 visible)
   @ViewChild('homilyScroll') homilyScroll?: ElementRef<HTMLElement>;
   @ViewChildren('homilyItem') homilyItems?: QueryList<ElementRef<HTMLElement>>;
 
-  scrollMaxHeight = 520; // fallback until measured
+  scrollMaxHeight = 520;
   scrollAtTop = true;
   scrollAtBottom = false;
 
   private resizeObserver?: ResizeObserver;
   private itemsSub?: any;
 
+  // ✅ BOOKMARKS (per-user via service)
+  bookmarkedIds = new Set<string>();
+  canUseBookmarks = true;
+
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
     private amanuService: AmanuService,
-    private toastr: ToastrService
+    private toastr: ToastrService,
+    private bookmarkService: BookmarkService
   ) {
     this.isAdmin = this.authService.isAdmin();
   }
@@ -71,16 +77,15 @@ export class HomiliesComponent implements OnInit, AfterViewInit, OnDestroy {
       reading: [''],
       content: ['', Validators.required]
     });
+
+    this.canUseBookmarks = this.bookmarkService.canUseBookmarks();
+    this.refreshBookmarks();
     this.loadHomilies();
   }
 
   ngAfterViewInit(): void {
-    // Watch changes of *ngFor items so we recalc height when filters change
-    this.itemsSub = this.homilyItems?.changes.subscribe(() => {
-      this.deferRecalcScrollBox();
-    });
+    this.itemsSub = this.homilyItems?.changes.subscribe(() => this.deferRecalcScrollBox());
 
-    // Watch size changes (window resize / layout changes)
     if (this.homilyScroll?.nativeElement && 'ResizeObserver' in window) {
       this.resizeObserver = new ResizeObserver(() => this.deferRecalcScrollBox());
       this.resizeObserver.observe(this.homilyScroll.nativeElement);
@@ -100,9 +105,8 @@ export class HomiliesComponent implements OnInit, AfterViewInit, OnDestroy {
       this.filteredHomilies = [...this.homilies];
       this.populateYears();
       this.applyFilters();
-
-      // after data load, compute scroll height
       this.deferRecalcScrollBox();
+      this.refreshBookmarks();
     });
   }
 
@@ -122,7 +126,6 @@ export class HomiliesComponent implements OnInit, AfterViewInit, OnDestroy {
     this.deferRecalcScrollBox();
   }
 
-  /** Modal Management */
   addHomily() {
     if (!this.isAdmin) return alert('Please login as admin.');
     this.openModal();
@@ -159,7 +162,6 @@ export class HomiliesComponent implements OnInit, AfterViewInit, OnDestroy {
     this.reviewData = null;
 
     if (item) {
-      // edit mode
       this.editingId = item.id;
       this.modalForm.patchValue({
         type: 'homily',
@@ -171,7 +173,6 @@ export class HomiliesComponent implements OnInit, AfterViewInit, OnDestroy {
         content: item.content
       });
     } else {
-      // add mode
       this.editingId = null;
       this.modalForm.reset({
         type: 'homily',
@@ -192,7 +193,6 @@ export class HomiliesComponent implements OnInit, AfterViewInit, OnDestroy {
     this.reviewData = null;
   }
 
-  /** VIEW-ONLY MODAL – when clicking a card */
   openViewHomily(item: Amanu) {
     this.viewHomilyItem = item;
     this.showViewModal = true;
@@ -203,7 +203,6 @@ export class HomiliesComponent implements OnInit, AfterViewInit, OnDestroy {
     this.viewHomilyItem = null;
   }
 
-  /** Internal save used AFTER review */
   private persistHomily() {
     if (this.modalForm.invalid) {
       this.toastr.warning('Form became invalid. Please check the fields.');
@@ -223,16 +222,13 @@ export class HomiliesComponent implements OnInit, AfterViewInit, OnDestroy {
       scripture: formValue.scripture || null,
       reading: formValue.reading || '',
       content: formValue.content?.trim() || '',
-      createdBy: 'test-user',  // TODO: replace with logged-in user
+      createdBy: 'test-user',
       modifiedBy: 'test-user',
       createdAt: new Date().toISOString(),
       modifiedAt: new Date().toISOString()
     };
 
-    console.log('Saving homily:', homily);
-
     if (this.editingId) {
-      // Update existing homily
       this.amanuService.update(this.editingId, homily).subscribe({
         next: () => {
           this.toastr.success('Homily updated successfully.');
@@ -245,7 +241,6 @@ export class HomiliesComponent implements OnInit, AfterViewInit, OnDestroy {
         }
       });
     } else {
-      // Create new homily
       this.amanuService.create(homily).subscribe({
         next: () => {
           this.toastr.success('Homily created successfully.');
@@ -260,7 +255,6 @@ export class HomiliesComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  // -------- REVIEW FLOW (same UX as Gospel) --------
   startReview() {
     if (this.modalForm.invalid) {
       this.toastr.warning('Please fill all required fields.');
@@ -295,9 +289,50 @@ export class HomiliesComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   // ==========================
+  // ✅ BOOKMARKS (SERVICE)
+  // ==========================
+  private makeBookmarkId(type: 'gospel' | 'homily', sourceId: number): string {
+    return `${type}:${sourceId}`;
+  }
+
+  private refreshBookmarks(): void {
+    const items = this.bookmarkService.getAll();
+    this.bookmarkedIds = new Set(items.map(x => x.id));
+  }
+
+  isBookmarked(h: Amanu): boolean {
+    const id = this.makeBookmarkId('homily', h.id);
+    return this.bookmarkedIds.has(id);
+  }
+
+  toggleBookmark(h: Amanu, e?: Event): void {
+    e?.stopPropagation?.();
+
+    if (!this.canUseBookmarks) {
+      this.toastr.warning('Bookmarks are for users only.');
+      return;
+    }
+
+    const id = this.makeBookmarkId('homily', h.id);
+
+    const item: BookmarkItem = {
+      id,
+      type: 'homily',
+      title: h.title,
+      date: h.date,
+      verse: h.scripture || '',
+      preview: this.getShortContent(h.content)
+    };
+
+    const saved = this.bookmarkService.toggle(item);
+    saved ? this.toastr.success('Saved to bookmarks.') : this.toastr.info('Removed bookmark.');
+
+    this.refreshBookmarks();
+  }
+
+  // ==========================
   // ✅ INTERNAL SCROLL HELPERS
   // ==========================
-
   private deferRecalcScrollBox(): void {
     setTimeout(() => {
       this.recalcScrollBoxMaxHeight();
@@ -342,7 +377,6 @@ export class HomiliesComponent implements OnInit, AfterViewInit, OnDestroy {
 
     const line = 56;
     const page = Math.max(200, Math.floor(el.clientHeight * 0.9));
-
     const key = e.key;
 
     if (key === 'ArrowDown') {

@@ -1,9 +1,13 @@
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, HostListener, OnInit, ViewChild } from '@angular/core';
+import { Component, ElementRef, HostListener, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { RouterModule } from '@angular/router';
 
 import { AuthService } from '../../core/services/auth.service';
 import { UserDashboardService } from '../../core/services/user-dashboard.service';
+import { BannerCarouselComponent } from '../../shared/banner-carousel/banner-carousel.component';
+
+import { environment } from '../../environments/environment';
+import { NotificationService, NotificationItem } from '../../core/services/notification.service';
 
 type RecentItem = Record<string, any>;
 
@@ -18,11 +22,11 @@ type PanelKey = 'donations' | 'documents' | 'scheduling';
 @Component({
   selector: 'app-user-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, BannerCarouselComponent],
   templateUrl: './user-dashboard.component.html',
   styleUrls: ['./user-dashboard.component.scss']
 })
-export class UserDashboardComponent implements OnInit {
+export class UserDashboardComponent implements OnInit, OnDestroy {
   currentDate: string = new Date().toLocaleString(undefined, {
     weekday: 'short',
     month: 'short',
@@ -34,11 +38,9 @@ export class UserDashboardComponent implements OnInit {
   loading = false;
   error = '';
 
-  // ✅ used only for showing/hiding the "View All" button
   limit = 5;
 
-  // ✅ "View All" now expands height ONLY (items are never hidden)
-  expanded: Record<PanelKey, boolean> = {
+  open: Record<PanelKey, boolean> = {
     donations: false,
     documents: false,
     scheduling: false
@@ -58,15 +60,33 @@ export class UserDashboardComponent implements OnInit {
 
   displayName = '';
 
+  banners: any[] = [];
+  bannerUrls: string[] = [];
+
+  // ✅ Notifications (Dashboard shows UNREAD ONLY)
+  notifLoading = false;
+  notifError = '';
+  unreadCount = 0;
+  notifications: NotificationItem[] = []; // UNREAD ONLY
+  notifOpen = true;
+
+  // ✅ UI-only: prevent double click spam
+  markingNotifId: number | null = null;
+
   constructor(
     private auth: AuthService,
-    private dashboard: UserDashboardService
+    private dashboard: UserDashboardService,
+    private notifs: NotificationService
   ) {}
 
   ngOnInit(): void {
     this.displayName = this.getDisplayName();
     this.load();
+    this.loadBanners();
+    this.loadNotifications();
   }
+
+  ngOnDestroy(): void {}
 
   private getDisplayName(): string {
     const anyAuth = this.auth as any;
@@ -83,6 +103,96 @@ export class UserDashboardComponent implements OnInit {
     return obj?.[key];
   }
 
+  // -------------------------
+  // ✅ Notifications (NO AUTO-MARK READ)
+  // -------------------------
+
+  /** Safe read-check for any backend shape */
+  private isNotifRead(n: any): boolean {
+    if (!n) return false;
+
+    // common shapes
+    if (typeof n.isRead === 'boolean') return n.isRead;
+
+    const raw = n.IsRead ?? n.read ?? n.Read;
+    if (typeof raw === 'boolean') return raw;
+
+    // allow 0/1
+    if (raw === 1 || raw === '1') return true;
+    if (raw === 0 || raw === '0') return false;
+
+    return false;
+  }
+
+  loadNotifications(): void {
+    this.notifLoading = true;
+    this.notifError = '';
+
+    this.notifs.getMy(30).subscribe({
+      next: (res) => {
+        const all = Array.isArray((res as any)?.items) ? (res as any).items : [];
+
+        // ✅ Dashboard shows ONLY unread
+        const unread = all.filter((x: any) => !this.isNotifRead(x));
+        this.notifications = unread;
+
+        // ✅ Keep badge consistent even if backend doesn't return unreadCount properly
+        const serverUnread = Number((res as any)?.unreadCount ?? NaN);
+        this.unreadCount = Number.isFinite(serverUnread) ? serverUnread : unread.length;
+      },
+      error: () => {
+        this.notifError = 'Failed to load notifications.';
+        this.unreadCount = 0;
+        this.notifications = [];
+      },
+      complete: () => (this.notifLoading = false)
+    });
+  }
+
+  markNotifRead(n: NotificationItem): void {
+    if (!n) return;
+
+    const id = (n as any).notificationId ?? (n as any).NotificationId;
+    if (!id) return;
+
+    if (this.markingNotifId === id) return;
+    this.markingNotifId = id;
+
+    this.notifs.markRead(id).subscribe({
+      next: () => {
+        // ✅ remove from dashboard list (unread-only)
+        this.notifications = this.notifications.filter((x: any) => {
+          const xid = x.notificationId ?? (x as any).NotificationId;
+          return xid !== id;
+        });
+
+        this.unreadCount = Math.max(0, this.unreadCount - 1);
+      },
+      error: () => {},
+      complete: () => {
+        this.markingNotifId = null;
+      }
+    });
+  }
+
+  markAllNotificationsRead(): void {
+    if (!(this.notifications?.length || 0)) return;
+
+    this.notifs.markAllRead().subscribe({
+      next: () => {
+        // ✅ Dashboard should remove them (unread-only)
+        this.notifications = [];
+        this.unreadCount = 0;
+      },
+      error: () => {}
+    });
+  }
+
+  trackByNotifId = (_: number, n: any) => n?.notificationId ?? n?.NotificationId ?? _;
+
+  // -------------------------
+  // ✅ Dashboard data
+  // -------------------------
   load(): void {
     this.loading = true;
     this.error = '';
@@ -104,6 +214,9 @@ export class UserDashboardComponent implements OnInit {
             recent: Array.isArray(res?.scheduling?.recent) ? res.scheduling.recent : []
           }
         };
+
+        // ✅ default closed (kept)
+        this.open = { donations: false, documents: false, scheduling: false };
       },
       error: (err: any) => {
         const msg =
@@ -124,22 +237,31 @@ export class UserDashboardComponent implements OnInit {
     });
   }
 
-  toggleViewAll(panel: PanelKey): void {
-    this.expanded[panel] = !this.expanded[panel];
+  /** ✅ Accordion: only one open at a time + still allows closing the same panel */
+  toggle(panel: PanelKey): void {
+    const willOpen = !this.open[panel];
 
-    // focus list after toggle so arrows work immediately
-    setTimeout(() => {
-      this.getPanelElement(panel)?.focus();
-    }, 0);
+    // ✅ close all first (forces only one open)
+    this.open = { donations: false, documents: false, scheduling: false };
+
+    // ✅ open the clicked one (or keep all closed if user is closing it)
+    if (willOpen) {
+      this.open[panel] = true;
+
+      setTimeout(() => {
+        this.activePanel = panel;
+        this.getPanelElement(panel)?.focus();
+      }, 0);
+    }
   }
 
   private getPanelElement(panel: PanelKey): HTMLDivElement | null {
     if (panel === 'donations') return this.donationsList?.nativeElement ?? null;
     if (panel === 'documents') return this.documentsList?.nativeElement ?? null;
-    return this.schedulingList?.nativeElement ?? null;
+    if (panel === 'scheduling') return this.schedulingList?.nativeElement ?? null;
+    return null;
   }
 
-  // ✅ Keyboard scroll support inside focused list
   @HostListener('window:keydown', ['$event'])
   onKeyDown(e: KeyboardEvent): void {
     const target = e.target as HTMLElement | null;
@@ -166,6 +288,41 @@ export class UserDashboardComponent implements OnInit {
       e.preventDefault();
       el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
     }
+  }
+
+  // -------------------------
+  // ✅ BANNERS
+  // -------------------------
+  private loadBanners(): void {
+    this.dashboard.getBanners().subscribe({
+      next: (res: any) => {
+        const list = Array.isArray(res) ? res : (Array.isArray(res?.items) ? res.items : []);
+        this.banners = list;
+
+        this.bannerUrls = this.banners
+          .map(b => this.bannerSrc(b))
+          .filter(u => !!u);
+      },
+      error: () => {
+        this.banners = [];
+        this.bannerUrls = [];
+      }
+    });
+  }
+
+  private bannerSrc(b: any): string {
+    const url =
+      this.get(b, 'fullUrl') ||
+      this.get(b, 'FullUrl') ||
+      this.get(b, 'url') ||
+      this.get(b, 'Url');
+
+    if (url) return String(url);
+
+    const fileName = this.get(b, 'fileName') || this.get(b, 'FileName');
+    if (!fileName) return '';
+
+    return `${environment.imageUrl}/uploads/banners/${fileName}`;
   }
 
   fmtDate(value: any): string {

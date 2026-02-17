@@ -9,8 +9,6 @@ import { ServiceScheduleRequirement } from '../../shared/models/service-schedule
   providedIn: 'root'
 })
 export class ServiceScheduleService {
-
-  // ✅ environment.apiUrl should be like: https://localhost:7006/api
   private apiUrl = `${environment.apiUrl}/ServiceSchedule`;
 
   constructor(private http: HttpClient) {}
@@ -19,21 +17,20 @@ export class ServiceScheduleService {
     return localStorage.getItem('token');
   }
 
-  // ✅ JSON headers ONLY for JSON requests (NOT for FormData uploads)
+  // ✅ JSON headers ONLY for JSON requests
   private getAuthJsonHeaders(): HttpHeaders {
     const token = this.getToken();
-    return new HttpHeaders({
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`
-    });
+    const headers: any = { 'Content-Type': 'application/json' };
+    if (token) headers.Authorization = `Bearer ${token}`;
+    return new HttpHeaders(headers);
   }
 
-  // ✅ Auth header ONLY (no Content-Type) for FormData uploads
+  // ✅ Auth header ONLY for FormData uploads
   private getAuthOnlyHeaders(): HttpHeaders {
     const token = this.getToken();
-    return new HttpHeaders({
-      Authorization: `Bearer ${token}`
-    });
+    const headers: any = {};
+    if (token) headers.Authorization = `Bearer ${token}`;
+    return new HttpHeaders(headers);
   }
 
   // ============ Main Schedule ============
@@ -83,18 +80,16 @@ export class ServiceScheduleService {
     );
   }
 
-  // ✅ Upload requirement photo (Wedding etc.)
+  // ✅ Upload requirement photo
   uploadRequirement(scheduleId: number, file: File, requirementType: string): Observable<any> {
     const formData = new FormData();
-
-    // ✅ Match your backend UploadRequirementDto: File + RequirementType
     formData.append('File', file);
     formData.append('RequirementType', requirementType);
 
     return this.http.post(
       `${this.apiUrl}/${scheduleId}/requirements/upload`,
       formData,
-      { headers: this.getAuthOnlyHeaders() } // ✅ DO NOT set Content-Type
+      { headers: this.getAuthOnlyHeaders() }
     );
   }
 }

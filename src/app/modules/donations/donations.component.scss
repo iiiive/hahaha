@@ -45,9 +45,10 @@
 
 .filters-subtitle { font-size: 12px; opacity: .7; }
 
+/* ✅ UPDATED: more filter fields */
 .filters-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr 2fr;
+  grid-template-columns: 1fr 1fr 1.2fr 1fr 1.6fr;
   gap: 14px;
   margin-top: 12px;
 }
@@ -73,6 +74,21 @@
 .field input:focus, .field select:focus {
   border-color: rgba(124,58,237,0.7);
   box-shadow: 0 0 0 3px rgba(124,58,237,0.15);
+}
+
+/* ✅ Search field spacing */
+.field.search input {
+  padding-left: 12px;
+}
+
+/* ✅ Responsive: stack nicely */
+@media (max-width: 980px) {
+  .filters-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .field.search {
+    grid-column: 1 / -1;
+  }
 }
 
 /* Week cards */

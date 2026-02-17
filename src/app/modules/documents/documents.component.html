@@ -292,12 +292,14 @@
               <input type="text"
                      formControlName="gcashReferenceNumber"
                      inputmode="numeric"
-                     pattern="[0-9]{8,20}"
+                     maxlength="13"
+                     pattern="[0-9]{13}"
+                     (input)="onDigitsInput('gcashReferenceNumber', 13)"
                      class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-                     placeholder="Enter reference number (digits only)" />
+                     placeholder="Enter reference number (13 digits)" />
               <p class="text-xs text-red-500 mt-1"
                  *ngIf="requestForm.get('gcashReferenceNumber')?.touched && requestForm.get('gcashReferenceNumber')?.invalid">
-                Reference number is required (8–20 digits).
+                Reference number is required (exactly 13 digits).
               </p>
             </div>
           </div>
@@ -346,20 +348,24 @@
         <label class="block text-sm font-medium text-gray-700 mb-2">First Name</label>
         <input type="text"
                formControlName="firstName"
+               maxlength="60"
+               (input)="onLettersInput('firstName')"
                class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
         <div *ngIf="requestForm.get('firstName')?.touched && requestForm.get('firstName')?.invalid"
              class="text-red-500 text-sm mt-1">
-          First Name is required
+          First Name is required (letters only)
         </div>
       </div>
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-2">Last Name</label>
         <input type="text"
                formControlName="lastName"
+               maxlength="60"
+               (input)="onLettersInput('lastName')"
                class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
         <div *ngIf="requestForm.get('lastName')?.touched && requestForm.get('lastName')?.invalid"
              class="text-red-500 text-sm mt-1">
-          Last Name is required
+          Last Name is required (letters only)
         </div>
       </div>
     </div>
@@ -375,7 +381,13 @@
         <label class="block text-sm font-medium text-gray-700 mb-2">Name of the Child</label>
         <input type="text"
                formControlName="childName"
+               maxlength="80"
+               (input)="onLettersInput('childName')"
                class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
+        <div *ngIf="requestForm.get('childName')?.touched && requestForm.get('childName')?.invalid"
+             class="text-red-500 text-sm mt-1">
+          Child Name is required (letters only)
+        </div>
       </div>
 
       <div class="grid grid-cols-2 gap-4">
@@ -386,12 +398,20 @@
           <input type="date"
                  formControlName="sacramentDate"
                  class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
+          <div *ngIf="requestForm.get('sacramentDate')?.touched && requestForm.get('sacramentDate')?.invalid"
+               class="text-red-500 text-sm mt-1">
+            Date is required
+          </div>
         </div>
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-2">Birthday</label>
           <input type="date"
                  formControlName="birthday"
                  class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
+          <div *ngIf="requestForm.get('birthday')?.touched && requestForm.get('birthday')?.invalid"
+               class="text-red-500 text-sm mt-1">
+            Birthday is required
+          </div>
         </div>
       </div>
 
@@ -401,13 +421,22 @@
                   formControlName="naPurpose"
                   class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500"
                   placeholder="State your purpose for requesting this certificate"></textarea>
+        <div *ngIf="requestForm.get('naPurpose')?.touched && requestForm.get('naPurpose')?.invalid"
+             class="text-red-500 text-sm mt-1">
+          Purpose is required
+        </div>
       </div>
 
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-2">Contact Number</label>
         <input type="tel"
                formControlName="naContact"
+               inputmode="numeric"
                class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
+        <div *ngIf="requestForm.get('naContact')?.touched && requestForm.get('naContact')?.invalid"
+             class="text-red-500 text-sm mt-1">
+          Contact is required (10–15 digits)
+        </div>
       </div>
     </div>
 
@@ -420,13 +449,25 @@
           <label class="block text-sm font-medium text-gray-700 mb-2">Groom's Full Name</label>
           <input type="text"
                  formControlName="groom"
+                 maxlength="80"
+                 (input)="onLettersInput('groom')"
                  class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
+          <div *ngIf="requestForm.get('groom')?.touched && requestForm.get('groom')?.invalid"
+               class="text-red-500 text-sm mt-1">
+            Groom is required (letters only)
+          </div>
         </div>
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-2">Bride's Full Name</label>
           <input type="text"
                  formControlName="bride"
+                 maxlength="80"
+                 (input)="onLettersInput('bride')"
                  class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
+          <div *ngIf="requestForm.get('bride')?.touched && requestForm.get('bride')?.invalid"
+               class="text-red-500 text-sm mt-1">
+            Bride is required (letters only)
+          </div>
         </div>
       </div>
 
@@ -436,12 +477,20 @@
           <input type="date"
                  formControlName="weddingDate"
                  class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
+          <div *ngIf="requestForm.get('weddingDate')?.touched && requestForm.get('weddingDate')?.invalid"
+               class="text-red-500 text-sm mt-1">
+            Wedding Date is required
+          </div>
         </div>
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-2">Place/Parish</label>
           <input type="text"
                  formControlName="weddingPlace"
                  class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
+          <div *ngIf="requestForm.get('weddingPlace')?.touched && requestForm.get('weddingPlace')?.invalid"
+               class="text-red-500 text-sm mt-1">
+            Place/Parish is required
+          </div>
         </div>
       </div>
 
@@ -451,13 +500,22 @@
                   formControlName="wedPurpose"
                   class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500"
                   placeholder="State your purpose for requesting this certificate"></textarea>
+        <div *ngIf="requestForm.get('wedPurpose')?.touched && requestForm.get('wedPurpose')?.invalid"
+             class="text-red-500 text-sm mt-1">
+          Purpose is required
+        </div>
       </div>
 
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-2">Contact Number</label>
         <input type="tel"
                formControlName="wedContact"
+               inputmode="numeric"
                class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
+        <div *ngIf="requestForm.get('wedContact')?.touched && requestForm.get('wedContact')?.invalid"
+             class="text-red-500 text-sm mt-1">
+          Contact is required (10–15 digits)
+        </div>
       </div>
     </div>
 
@@ -469,7 +527,13 @@
         <label class="block text-sm font-medium text-gray-700 mb-2">Full Name of Deceased</label>
         <input type="text"
                formControlName="deathName"
+               maxlength="80"
+               (input)="onLettersInput('deathName')"
                class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
+        <div *ngIf="requestForm.get('deathName')?.touched && requestForm.get('deathName')?.invalid"
+             class="text-red-500 text-sm mt-1">
+          Deceased Name is required (letters only)
+        </div>
       </div>
 
       <div class="grid grid-cols-2 gap-4">
@@ -478,12 +542,20 @@
           <input type="date"
                  formControlName="deathDate"
                  class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
+          <div *ngIf="requestForm.get('deathDate')?.touched && requestForm.get('deathDate')?.invalid"
+               class="text-red-500 text-sm mt-1">
+            Date of Death is required
+          </div>
         </div>
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-2">Place of Death</label>
           <input type="text"
                  formControlName="deathPlace"
                  class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
+          <div *ngIf="requestForm.get('deathPlace')?.touched && requestForm.get('deathPlace')?.invalid"
+               class="text-red-500 text-sm mt-1">
+            Place of Death is required
+          </div>
         </div>
       </div>
 
@@ -491,14 +563,25 @@
         <label class="block text-sm font-medium text-gray-700 mb-2">Relation of Requestor</label>
         <input type="text"
                formControlName="relation"
+               maxlength="40"
+               (input)="onLettersInput('relation')"
                class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
+        <div *ngIf="requestForm.get('relation')?.touched && requestForm.get('relation')?.invalid"
+             class="text-red-500 text-sm mt-1">
+          Relation is required (letters only)
+        </div>
       </div>
 
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-2">Contact Number</label>
         <input type="tel"
                formControlName="deathContact"
+               inputmode="numeric"
                class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
+        <div *ngIf="requestForm.get('deathContact')?.touched && requestForm.get('deathContact')?.invalid"
+             class="text-red-500 text-sm mt-1">
+          Contact is required (10–15 digits)
+        </div>
       </div>
 
       <div>
@@ -507,6 +590,10 @@
                   formControlName="deathPurpose"
                   class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500"
                   placeholder="State your purpose (required)"></textarea>
+        <div *ngIf="requestForm.get('deathPurpose')?.touched && requestForm.get('deathPurpose')?.invalid"
+             class="text-red-500 text-sm mt-1">
+          Purpose is required
+        </div>
       </div>
     </div>
 
@@ -515,7 +602,7 @@
       <label class="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
       <input type="email"
              formControlName="email"
-             class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500" />
+             class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500" />
       <div *ngIf="requestForm.get('email')?.touched && requestForm.get('email')?.invalid"
            class="text-red-500 text-sm mt-1">
         Valid email is required
@@ -556,12 +643,14 @@
         <input type="text"
                formControlName="gcashReferenceNumber"
                inputmode="numeric"
-               pattern="[0-9]{8,20}"
+               maxlength="13"
+               pattern="[0-9]{13}"
+               (input)="onDigitsInput('gcashReferenceNumber', 13)"
                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-               placeholder="Enter reference number (digits only)" />
+               placeholder="Enter reference number (13 digits)" />
         <p class="text-xs text-red-500 mt-1"
            *ngIf="requestForm.get('gcashReferenceNumber')?.touched && requestForm.get('gcashReferenceNumber')?.invalid">
-          Reference number is required (8–20 digits).
+          Reference number is required (exactly 13 digits).
         </p>
       </div>
     </div>

@@ -23,7 +23,6 @@
         <div class="filters-grid">
           <div class="field">
             <label>Month</label>
-            <!-- ✅ FIX: use ngValue so it stays a NUMBER -->
             <select [(ngModel)]="selectedMonthIndex" (change)="onMonthYearChange()">
               <option *ngFor="let m of months; let i = index" [ngValue]="i">{{ m }}</option>
             </select>
@@ -31,7 +30,6 @@
 
           <div class="field">
             <label>Year</label>
-            <!-- ✅ FIX: keep year numeric -->
             <select [(ngModel)]="selectedYear" (change)="onMonthYearChange()">
               <option *ngFor="let y of [2024,2025,2026,2027,2028]" [ngValue]="y">{{ y }}</option>
             </select>
@@ -46,6 +44,27 @@
               <option [ngValue]="'KAPASALAMATAN'">KAPASALAMATAN</option>
               <option [ngValue]="'Other'">Other</option>
             </select>
+          </div>
+
+          <!-- ✅ NEW: Payment filter -->
+          <div class="field">
+            <label>Payment</label>
+            <select [(ngModel)]="paymentFilter" (change)="setPaymentFilter(paymentFilter)">
+              <option [ngValue]="'All'">All</option>
+              <option [ngValue]="'Cash'">Cash only</option>
+              <option [ngValue]="'GCash'">Online GCash only</option>
+            </select>
+          </div>
+
+          <!-- ✅ NEW: Search donor -->
+          <div class="field search">
+            <label>Search Donator</label>
+            <input
+              type="text"
+              [(ngModel)]="searchTerm"
+              (input)="onSearchChange()"
+              placeholder="Type a name (e.g., francis)"
+            />
           </div>
         </div>
 
@@ -91,7 +110,6 @@
           <div class="td">
             <div class="donor-line">
               <div class="donor-main">
-                <!-- ✅ donor top row: name + badge aligned -->
                 <div class="donor-top">
                   <div class="donor-name">{{ getDonorName(d) }}</div>
 

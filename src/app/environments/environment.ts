@@ -1,5 +1,5 @@
 export const environment = {
   production: false,
-  apiUrl: 'https://localhost:7006/api',
-  imageUrl: 'https://localhost:7006'
+  apiUrl: '/api',          // ✅ via proxy
+  imageUrl: ''             // ✅ so images can use "/uploads/..." via proxy
 };

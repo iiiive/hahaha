@@ -56,17 +56,21 @@
         <div class="field">
           <label>Role</label>
           <select formControlName="roleId">
-  <option [ngValue]="1">Admin</option>
-  <option [ngValue]="2">User</option>
-</select>
-
+            <option [ngValue]="1">Admin</option>
+            <option [ngValue]="2">User</option>
+          </select>
         </div>
 
-        <div class="field checkbox">
-          <label>
-            <input type="checkbox" formControlName="isActive" />
-            Active
-          </label>
+        <!-- ✅ NEW: Address -->
+        <div class="field">
+          <label>Complete Address</label>
+          <input type="text" formControlName="completeAddress" placeholder="Enter complete address" />
+        </div>
+
+        <!-- ✅ NEW: Phone -->
+        <div class="field">
+          <label>Phone Number</label>
+          <input type="text" formControlName="phoneNumber" placeholder="09xxxxxxxxx" />
         </div>
       </div>
 
